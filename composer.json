@@ -1,0 +1,33 @@
+{
+    "name": "appercode/laravel-support",
+    "description": "Laravel package for Appercode.com apps integration.",
+    "keywords": ["integration", "appercode", "mobile", "laravel"],
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Artem Garnyshev",
+            "email": "artem@digitalsparta.com"
+        }
+    ],
+    "type": "library",
+    "require": {
+		"php": ">=7.1",
+        "guzzlehttp/guzzle": "^6.3",
+        "mockery/mockery": "^1.1"
+    },
+    "require-dev": {
+		"phpunit/phpunit": "^7",
+        "orchestra/testbench": "~3.0",
+        "phpunit/php-code-coverage": "^6.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "Appercode\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Tests\\": "tests/"
+        }
+    }
+}
