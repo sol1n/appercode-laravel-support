@@ -14,12 +14,12 @@ trait Authenticatable
     {
         try {
             $json = self::jsonRequest([
-                'method' => $backend->methods('login')['type'],
+                'method' => self::methods($backend, 'login')['type'],
                 'json' => [
                     'username' => $username,
                     'password' => $password
                 ],
-                'url' => $backend->methods('login')['url'],
+                'url' => self::methods($backend, 'login')['url'],
             ], false);
 
             $user = new self;

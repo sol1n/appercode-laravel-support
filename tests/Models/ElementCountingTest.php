@@ -11,10 +11,24 @@ use Appercode\Schema;
 use Appercode\Services\ElementManager;
 use Appercode\Enums\Schema\FieldTypes as SchemaFieldTypes;
 
-use Illuminate\Support\Facades\Cache;
-
 class ElementCountingTest extends TestCase
 {
+    private $user;
+    private $schema;
+
+    protected function setUp()
+    {
+        parent::setUp();
+
+        $this->user = User::login((new Backend), getenv('APPERCODE_USER'), getenv('APPERCODE_PASSWORD'));
+        $this->schema = $this->createSchema($this->user->backend);
+    }
+
+    protected function tearDown()
+    {
+        $this->schema->delete();
+    }
+
     private function createSchema(Backend $backend)
     {
         return Schema::create([
@@ -32,84 +46,88 @@ class ElementCountingTest extends TestCase
     public function test_elements_can_counting()
     {
         $elementsToCreation = 2;
-        $user = User::login((new Backend), getenv('APPERCODE_USER'), getenv('APPERCODE_PASSWORD'));
-        
-        $testSchema = $this->createSchema($user->backend);
-        
         for ($i = 0; $i < $elementsToCreation; $i++) {
-            Element::Create($testSchema->id, [
-                'title' => str_random(20)
-            ], $user->backend);
+            Element::create($this->schema->id, [
+                'title' => (string) $i
+            ], $this->user->backend);
         }
-
-        $count = Element::count($testSchema->id, $user->backend);
-
-        $testSchema->delete();
-        
-        $this->assertEquals($elementsToCreation, $count);
+        $this->assertEquals($elementsToCreation, Element::count($this->schema->id, $this->user->backend));
     }
 
     public function test_elements_can_counting_with_filter()
     {
         $elementsToCreation = 2;
-        $user = User::login((new Backend), getenv('APPERCODE_USER'), getenv('APPERCODE_PASSWORD'));
-        
-        $testSchema = $this->createSchema($user->backend);
-        
         for ($i = 0; $i < $elementsToCreation; $i++) {
-            Element::Create($testSchema->id, [
+            Element::create($this->schema->id, [
                 'title' => (string) $i
-            ], $user->backend);
+            ], $this->user->backend);
         }
-
-        $count = Element::count($testSchema->id, $user->backend, [
+        
+        $this->assertEquals(1, Element::count($this->schema->id, $this->user->backend, [
             'where' => [
                 'title' => '0'
             ]
-        ]);
-
-        $testSchema->delete();
-        
-        $this->assertEquals(1, $count);
+        ]));
     }
 
     public function test_elements_can_counting_via_elements_manager_with_caching()
     {
         $elementsToCreation = 2;
-        $user = User::login((new Backend), getenv('APPERCODE_USER'), getenv('APPERCODE_PASSWORD'));
-        
-        $testSchema = $this->createSchema($user->backend);
-        
+        $elementManager = new ElementManager($this->user->backend);
+
         for ($i = 0; $i < $elementsToCreation; $i++) {
-            Element::Create($testSchema->id, [
+            $elementManager->create($this->schema->id, [
                 'title' => (string) $i
-            ], $user->backend);
+            ], $this->user->backend);
         }
 
-        $elementManager = new ElementManager($user->backend);
-
-        $count = $elementManager->count($testSchema->id, [
+        $this->assertEquals(1, $elementManager->count($this->schema->id, [
             'where' => [
                 'title' => '0'
             ]
-        ]);
-
-        $this->assertEquals(1, $count);
+        ]));
 
         for ($i = 0; $i < $elementsToCreation; $i++) {
-            Element::Create($testSchema->id, [
+            $elementManager->create($this->schema->id, [
                 'title' => (string) $i
-            ], $user->backend);
+            ], $this->user->backend);
         }
 
-        $count = $elementManager->count($testSchema->id, [
+        $this->assertEquals(2, $elementManager->count($this->schema->id, [
             'where' => [
                 'title' => '0'
             ]
-        ]);
+        ]));
+    }
 
-        $this->assertEquals(2, $count);
+    public function test_elements_can_counting_via_elements_manager_without_caching()
+    {
+        $elementsToCreation = 2;
+        app('config')->set('appercode.elements.caching.enabled', false);
+        $elementManager = new ElementManager($this->user->backend);
 
-        $testSchema->delete();
+        for ($i = 0; $i < $elementsToCreation; $i++) {
+            $elementManager->create($this->schema->id, [
+                'title' => (string) $i
+            ], $this->user->backend);
+        }
+
+        $this->assertEquals(1, $elementManager->count($this->schema->id, [
+            'where' => [
+                'title' => '0'
+            ]
+        ]));
+
+        for ($i = 0; $i < $elementsToCreation; $i++) {
+            $elementManager->create($this->schema->id, [
+                'title' => (string) $i
+            ], $this->user->backend);
+        }
+
+        $this->assertEquals(2, $elementManager->count($this->schema->id, [
+            'where' => [
+                'title' => '0'
+            ]
+        ]));
     }
 }

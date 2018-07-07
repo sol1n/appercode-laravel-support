@@ -20,5 +20,8 @@ abstract class TestCase extends BaseTestCase
 
         $app['config']->set('appercode.server', getenv('APPERCODE_SERVER'));
         $app['config']->set('appercode.project', getenv('APPERCODE_DEFAULT_BACKEND'));
+
+        $app['config']->set('appercode.elements.caching.Ttl', 10);
+        $app['config']->set('appercode.elements.caching.enabled', true);
     }
 }

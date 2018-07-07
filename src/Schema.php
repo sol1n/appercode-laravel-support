@@ -43,6 +43,30 @@ class Schema
 
     const PARENT_FIELD_NAME = 'parentId';
 
+    private static function methods(Backend $backend, string $name, array $data = [])
+    {
+        switch ($name) {
+            case 'create':
+                return [
+                    'type' => 'POST',
+                    'url' => $backend->server . $backend->project . '/schemas'
+                ];
+            case 'delete':
+                return [
+                    'type' => 'DELETE',
+                    'url' => $backend->server . $backend->project . '/schemas/' . $data['schema']
+                ];
+            case 'get':
+                return [
+                    'type' => 'GET',
+                    'url' => $backend->server . $backend->project . '/schemas/' . $data['schema']
+                ];
+
+            default:
+                throw new \Exception('Can`t find method ' . $name);
+        }
+    }
+
     public function __construct(array $data, Backend $backend)
     {
         $this->id = $data['id'];
@@ -256,7 +280,8 @@ class Schema
         }
 
         try {
-            $method = $backend->methods('schema_create');
+            $method = self::methods($backend, 'create');
+
             $json = self::jsonRequest([
                 'method' => $method['type'],
                 'json' => $fields,
@@ -285,7 +310,7 @@ class Schema
      */
     public static function get(string $schemaName, Backend $backend): Schema
     {
-        $method = $backend->methods('schema_get', ['schema' => $schemaName]);
+        $method = self::methods($backend, 'get', ['schema' => $schemaName]);
 
         $json = self::jsonRequest([
             'method' => $method['type'],
@@ -302,7 +327,7 @@ class Schema
      */
     public function delete(): Schema
     {
-        $method = $this->backend->methods('schema_delete', ['schema' => $this->id]);
+        $method = self::methods($this->backend, 'delete', ['schema' => $this->id]);
 
         self::request([
             'method' => $method['type'],

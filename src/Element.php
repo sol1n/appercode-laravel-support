@@ -22,6 +22,30 @@ class Element
 
     public $fields;
 
+    private static function methods(Backend $backend, string $name, array $data = []): array
+    {
+        switch ($name) {
+            case 'count':
+                return [
+                    'type' => 'POST',
+                    'url' => $backend->server . $backend->project . '/objects/' . $data['schema'] . '/query?count=true'
+                ];
+            case 'create':
+                return [
+                    'type' => 'POST',
+                    'url' => $backend->server . $backend->project . '/objects/' . $data['schema']
+                ];
+            case 'delete':
+                return [
+                    'type' => 'DELETE',
+                    'url' => $backend->server . $backendbackend->project . '/objects/' . $data['schema'] . '/' . $data['id']
+                ];
+
+            default:
+                throw new \Exception('Can`t find method ' . $name);
+        }
+    }
+
     private function innerFields()
     {
         return [
@@ -59,9 +83,9 @@ class Element
         return $this;
     }
 
-    public static function count(string $schemaName, Backend $backend, $query = [])
+    public static function count(string $schemaName, Backend $backend, $query = []): int
     {
-        $method = $backend->methods('elements_count', ['schema' => $schemaName]);
+        $method = self::methods($backend, 'count', ['schema' => $schemaName]);
 
         return self::countRequest([
             'json' => $query,
@@ -71,9 +95,16 @@ class Element
         ]);
     }
 
+    /**
+     * Creates new element in selected schema
+     * @param  string  $schemaName The schema in which the element will be created
+     * @param  array   $fields     [description]
+     * @param  Backend $backend    [description]
+     * @return [type]              [description]
+     */
     public static function create(string $schemaName, array $fields, Backend $backend): Element
     {
-        $method = $backend->methods('elements_create', ['schema' => $schemaName]);
+        $method = self::methods($backend, 'create', ['schema' => $schemaName]);
 
         $json = self::jsonRequest([
             'method' => $method['type'],
@@ -85,5 +116,25 @@ class Element
         ]);
 
         return new Element($json, $backend);
+    }
+
+    /**
+     * Deletes current element
+     * @return Appercode\Element removed element instance
+     */
+    public function delete(): Element
+    {
+        $method = self::methods($backend, 'delete', ['schema' => $schemaName, 'id' => $this->id]);
+
+        $json = self::jsonRequest([
+            'method' => $method['type'],
+            'json' => $fields,
+            'headers' => [
+                'X-Appercode-Session-Token' => $backend->token()
+            ],
+            'url' => $method['url'],
+        ]);
+
+        return $this;
     }
 }

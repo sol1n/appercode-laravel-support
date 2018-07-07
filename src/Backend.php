@@ -18,50 +18,9 @@ class Backend
 
     use AppercodeRequest;
 
-    private $project;
-    private $server;
-    private $user;
-
-    public function methods(string $name, array $data = [])
-    {
-        switch ($name) {
-        case 'login':
-          return [
-          'type' => 'POST',
-          'url' => $this->server . $this->project . '/login'
-        ];
-        case 'elements_count':
-          return [
-          'type' => 'POST',
-          'url' => $this->server . $this->project . '/objects/' . $data['schema'] . '/query?count=true'
-        ];
-        case 'elements_create':
-          return [
-          'type' => 'POST',
-          'url' => $this->server . $this->project . '/objects/' . $data['schema']
-        ];
-        case 'schema_create':
-          return [
-          'type' => 'POST',
-          'url' => $this->server . $this->project . '/schemas'
-        ];
-        case 'schema_delete':
-          return [
-          'type' => 'DELETE',
-          'url' => $this->server . $this->project . '/schemas/' . $data['schema']
-        ];
-        case 'schema_get':
-          return [
-          'type' => 'GET',
-          'url' => $this->server . $this->project . '/schemas/' . $data['schema']
-        ];
-        
-        default:
-          throw new \Exception('Can`t find method ' . $name);
-      }
-
-        return $methods[$name] ?? null;
-    }
+    public $project;
+    public $server;
+    public $user;
 
     public function setServer(string $server)
     {
