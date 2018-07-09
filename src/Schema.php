@@ -4,6 +4,8 @@ namespace Appercode;
 
 use Carbon\Carbon;
 use GuzzleHttp\Exception\ClientException;
+use GuzzleHttp\Exception\ServerException;
+use GuzzleHttp\Exception\BadResponseException;
 
 use Appercode\Backend;
 use Appercode\Traits\AppercodeRequest;
@@ -290,7 +292,7 @@ class Schema
             ]);
 
             return new Schema($json, $backend);
-        } catch (ClientException $e) {
+        } catch (BadResponseException $e) {
             $code = $e->hasResponse() ? $e->getResponse()->getStatusCode() : null;
             $message = $e->hasResponse() ? $e->getResponse()->getBody() : '';
 

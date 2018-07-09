@@ -6,8 +6,9 @@
 			convertWarningsToExceptions="true"
 			stopOnFailure="true">
 	<testsuites>
-		<testsuite name="Models Tests">
+		<testsuite name="Library Tests">
 			<directory>./tests/Models</directory>
+			<directory>./tests/Functional</directory>
 		</testsuite>
 	</testsuites>
 	<filter>
