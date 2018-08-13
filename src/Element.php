@@ -3,6 +3,7 @@
 namespace Appercode;
 
 use Carbon\Carbon;
+use Illuminate\Support\Collection;
 
 use Appercode\Backend;
 use Appercode\Schema;
@@ -19,6 +20,8 @@ class Element
     public $createdAt;
     public $updatedAt;
     public $ownerId;
+    public $schemaName;
+    public $isPublished;
 
     public $fields;
 
@@ -30,6 +33,11 @@ class Element
                     'type' => 'POST',
                     'url' => $backend->server . $backend->project . '/objects/' . $data['schema'] . '/query?count=true'
                 ];
+            case 'get':
+                return [
+                    'type' => 'POST',
+                    'url' => $backend->server . $backend->project . '/objects/' . $data['schema'] . '/query'
+                ];
             case 'create':
                 return [
                     'type' => 'POST',
@@ -38,7 +46,12 @@ class Element
             case 'delete':
                 return [
                     'type' => 'DELETE',
-                    'url' => $backend->server . $backendbackend->project . '/objects/' . $data['schema'] . '/' . $data['id']
+                    'url' => $backend->server . $backend->project . '/objects/' . $data['schema'] . '/' . $data['id']
+                ];
+            case 'bulk-update':
+                return [
+                    'type' => 'PUT',
+                    'url' => $backend->server . $backend->project . '/objects/' . $data['schema'] . '/batch'
                 ];
 
             default:
@@ -61,6 +74,21 @@ class Element
         return in_array($name, $this->innerFields());
     }
 
+    private static function getSchemaName($schema): string
+    {
+        $schemaName = $schema instanceof Schema
+            ? $schema->id
+            : (is_string($schema)
+                ? $schema
+                : null);
+
+        if (is_null($schemaName)) {
+            throw new \Exception('Can`t update elements: empty schema provided');
+        }
+
+        return $schemaName;
+    }
+
     public function __construct(array $data, Backend $backend, $schema = null)
     {
         $this->id = $data['id'];
@@ -78,17 +106,23 @@ class Element
         $this->backend = $backend;
         if (!is_null($schema) and $schema instanceof Schema) {
             $this->schema = $schema;
+            $this->schemaName = $schema->id;
+        }
+
+        if (!is_null($schema) and is_string($schema)) {
+            $this->schemaName = $schema;
         }
 
         return $this;
     }
 
-    public static function count(string $schemaName, Backend $backend, $query = []): int
+    public static function count($schema, Backend $backend, $query = []): int
     {
+        $schemaName = self::getSchemaName($schema);
         $method = self::methods($backend, 'count', ['schema' => $schemaName]);
 
         return self::countRequest([
-            'json' => $query,
+            'json' => count($query) ? $query : (object)[],
             'url' => $method['url'],
             'method' => $method['type'],
             'headers' => ['X-Appercode-Session-Token' => $backend->token()],
@@ -97,13 +131,14 @@ class Element
 
     /**
      * Creates new element in selected schema
-     * @param  string  $schemaName The schema in which the element will be created
+     * @param  Appercode/Schema|string  $schema The schema in which the element will be created
      * @param  array   $fields     [description]
      * @param  Backend $backend    [description]
      * @return [type]              [description]
      */
-    public static function create(string $schemaName, array $fields, Backend $backend): Element
+    public static function create($schema, array $fields, Backend $backend): Element
     {
+        $schemaName = self::getSchemaName($schema);
         $method = self::methods($backend, 'create', ['schema' => $schemaName]);
 
         $json = self::jsonRequest([
@@ -115,7 +150,7 @@ class Element
             'url' => $method['url'],
         ]);
 
-        return new Element($json, $backend);
+        return new Element($json, $backend, $schema);
     }
 
     /**
@@ -124,7 +159,7 @@ class Element
      */
     public function delete(): Element
     {
-        $method = self::methods($backend, 'delete', ['schema' => $schemaName, 'id' => $this->id]);
+        $method = self::methods($backend, 'delete', ['schema' => $this->schemaName, 'id' => $this->id]);
 
         $json = self::jsonRequest([
             'method' => $method['type'],
@@ -136,5 +171,63 @@ class Element
         ]);
 
         return $this;
+    }
+
+    /**
+     * Returns collection elements from schema with filter
+     * @param  Appercode\Schema|string  $schema
+     * @param  Appercode\Backend $backend
+     * @param  array|null  $filter
+     * @return Illuminate\Support\Collection
+     */
+    public static function get($schema, Backend $backend, $filter = null): Collection
+    {
+        $result = new Collection;
+
+        $schemaName = self::getSchemaName($schema);
+        $method = self::methods($backend, 'get', ['schema' => $schemaName]);
+
+        $json = self::jsonRequest([
+            'method' => $method['type'],
+            'json' => $filter,
+            'headers' => [
+                'X-Appercode-Session-Token' => $backend->token()
+            ],
+            'url' => $method['url'],
+        ]);
+
+        foreach ($json as $element) {
+            $result->push(new Element($element, $backend, $schema));
+        }
+
+        return $result;
+    }
+
+    /**
+     * Elements bulk update method
+     * @param  array   $ids
+     * @param  array   $changes
+     * @param  Appercode\Schema|string  $schema
+     * @param  Backend $backend
+     * @return boolean
+     */
+    public static function update(array $ids, array $changes, $schema, Backend $backend)
+    {
+        $schemaName = self::getSchemaName($schema);
+        $method = self::methods($backend, 'bulk-update', ['schema' => $schemaName]);
+
+        $json = self::jsonRequest([
+            'method' => $method['type'],
+            'json' => [
+                'ids' => $ids,
+                'changes' => $changes
+            ],
+            'headers' => [
+                'X-Appercode-Session-Token' => $backend->token()
+            ],
+            'url' => $method['url'],
+        ]);
+
+        return true;
     }
 }

@@ -137,11 +137,49 @@ class ElementsTest extends TestCase
             $schema = $this->createSchema($this->user->backend, $schemaFields);
             $element = Element::create($schema->id, $elementFields, $this->user->backend);
 
+            $elementFields['isPublished'] = true;
+
             foreach ($element->fields as $fieldName => $fieldValue) {
                 $this->assertEquals($fieldValue, $elementFields[$fieldName]);
             }
 
             $schema->delete();
         }
+    }
+
+    /**
+     * @group current
+     */
+    public function test_bulk_simple_operations()
+    {
+        $schema = $this->createSchema($this->user->backend, [
+            [
+                'name' => 'stringSingleField',
+                'type' => SchemaFieldTypes::STRING
+            ]
+        ]);
+
+        $elements = [];
+
+        for ($i = 0; $i < 5; $i++) {
+            $element = Element::create($schema->id, ['stringSingleField' => 'title'], $this->user->backend);
+            $elements[$element->id] = $element;
+        }
+
+        Element::update(array_keys($elements), ['stringSingleField' => 'new-title'], $schema, $this->user->backend);
+
+        $newElements = Element::get($schema, $this->user->backend, [
+            'where' => [
+                'id' => [
+                    '$in' => array_keys($elements)
+                ]
+            ]
+        ]);
+
+        foreach ($newElements as $element) {
+            $this->assertEquals($element->fields['stringSingleField'], 'new-title');
+        }
+
+        $schema->delete();
     }
 }
