@@ -3,8 +3,6 @@
 namespace Appercode;
 
 use Carbon\Carbon;
-use GuzzleHttp\Exception\ClientException;
-use GuzzleHttp\Exception\ServerException;
 use GuzzleHttp\Exception\BadResponseException;
 
 use Appercode\Backend;

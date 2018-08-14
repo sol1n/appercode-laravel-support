@@ -5,13 +5,14 @@ namespace Appercode;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
 
-use Appercode\Backend;
 use Appercode\Schema;
+use Appercode\Backend;
 use Appercode\Traits\AppercodeRequest;
+use Appercode\Traits\SchemaName;
 
 class Element
 {
-    use AppercodeRequest;
+    use AppercodeRequest, SchemaName;
 
     private $backend;
     private $schema;
@@ -77,21 +78,6 @@ class Element
     private function isInnerField($name): bool
     {
         return in_array($name, $this->innerFields());
-    }
-
-    private static function getSchemaName($schema): string
-    {
-        $schemaName = $schema instanceof Schema
-            ? $schema->id
-            : (is_string($schema)
-                ? $schema
-                : null);
-
-        if (is_null($schemaName)) {
-            throw new \Exception('Can`t update elements: empty schema provided');
-        }
-
-        return $schemaName;
     }
 
     public function __construct(array $data, Backend $backend, $schema = null)
@@ -238,12 +224,12 @@ class Element
 
     /**
      * Returns results of bulk queries to collection
-     * @param  array   $queries array of objects with keys: count, where, include, order, skip, take
      * @param  Appercode\Schema|string  $schema
+     * @param  array   $queries array of objects with keys: count, where, include, order, skip, take
      * @param  Appercode\Backend $backend
      * @return Illuminate\Support\Collection collection of objects with keys: count, list
      */
-    public static function bulk(array $queries, $schema, Backend $backend): Collection
+    public static function bulk($schema, array $queries, Backend $backend): Collection
     {
         $schemaName = self::getSchemaName($schema);
         $method = self::methods($backend, 'bulk-query', ['schema' => $schemaName]);

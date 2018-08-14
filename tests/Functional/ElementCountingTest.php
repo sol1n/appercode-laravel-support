@@ -149,7 +149,36 @@ class ElementCountingTest extends TestCase
             ];
         }
 
-        $results = Element::bulk($queries, $this->schema->id, $this->user->backend);
+        $results = Element::bulk($this->schema->id, $queries, $this->user->backend);
+
+        foreach ($results as $one) {
+            $this->assertArrayHasKey('count', $one);
+            $this->assertEquals($one['count'], 1);
+        }
+    }
+
+    /**
+     * @group current
+     */
+    public function test_elements_can_counting_with_bulk_query_via_manager()
+    {
+        $elementsToCreation = 2;
+        $elementManager = new ElementManager($this->user->backend);
+
+        for ($i = 0; $i < $elementsToCreation; $i++) {
+            $elementManager->create($this->schema->id, [
+                'title' => (string) $i
+            ], $this->user->backend);
+
+            $queries[] = [
+                'count' => true,
+                'where' => [
+                    'title' => (string) $i
+                ]
+            ];
+        }
+
+        $results = $elementManager->bulk($this->schema->id, $queries);
 
         foreach ($results as $one) {
             $this->assertArrayHasKey('count', $one);

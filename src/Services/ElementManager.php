@@ -4,11 +4,14 @@ namespace Appercode\Services;
 
 use Appercode\Element;
 use Appercode\Backend;
-use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Collection;
 use Appercode\Services\ElementCountingManager;
+use Appercode\Traits\SchemaName;
 
 class ElementManager
 {
+    use SchemaName;
+
     protected $backend;
     protected $cachingTtl;
     protected $enableCaching;
@@ -23,14 +26,19 @@ class ElementManager
         $this->countingManager = new ElementCountingManager($this->backend);
     }
 
-    public function count(string $schemaName, array $query = [])
+    public function count($schema, array $query = [])
     {
-        return $this->countingManager->count($schemaName, $query);
+        return $this->countingManager->count(self::getSchemaName($schema), $query);
     }
 
-    public function create(string $schemaName, array $fields)
+    public function create($schema, array $fields)
     {
-        $this->countingManager->flushSchema($schemaName);
-        return Element::create($schemaName, $fields, $this->backend);
+        $this->countingManager->flushSchema(self::getSchemaName($schema));
+        return Element::create($schema, $fields, $this->backend);
+    }
+
+    public function bulk($schema, array $queries): Collection
+    {
+        return Element::bulk($schema, $queries, $this->backend);
     }
 }
