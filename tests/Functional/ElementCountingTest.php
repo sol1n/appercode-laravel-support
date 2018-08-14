@@ -130,4 +130,30 @@ class ElementCountingTest extends TestCase
             ]
         ]));
     }
+
+    public function test_elements_can_counting_with_bulk_query()
+    {
+        $queries = [];
+        $elementsToCreation = 20;
+
+        for ($i = 0; $i < $elementsToCreation; $i++) {
+            Element::create($this->schema->id, [
+                'title' => (string) $i
+            ], $this->user->backend);
+
+            $queries[] = [
+                'count' => true,
+                'where' => [
+                    'title' => (string) $i
+                ]
+            ];
+        }
+
+        $results = Element::bulk($queries, $this->schema->id, $this->user->backend);
+
+        foreach ($results as $one) {
+            $this->assertArrayHasKey('count', $one);
+            $this->assertEquals($one['count'], 1);
+        }
+    }
 }

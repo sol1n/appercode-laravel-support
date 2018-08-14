@@ -53,6 +53,11 @@ class Element
                     'type' => 'PUT',
                     'url' => $backend->server . $backend->project . '/objects/' . $data['schema'] . '/batch'
                 ];
+            case 'bulk-query':
+                return [
+                    'type' => 'POST',
+                    'url' => $backend->server . $backend->project . '/objects/' . $data['schema'] . '/batch/query'
+                ];
 
             default:
                 throw new \Exception('Can`t find method ' . $name);
@@ -229,5 +234,43 @@ class Element
         ]);
 
         return true;
+    }
+
+    /**
+     * Returns results of bulk queries to collection
+     * @param  array   $queries array of objects with keys: count, where, include, order, skip, take
+     * @param  Appercode\Schema|string  $schema
+     * @param  Appercode\Backend $backend
+     * @return Illuminate\Support\Collection collection of objects with keys: count, list
+     */
+    public static function bulk(array $queries, $schema, Backend $backend): Collection
+    {
+        $schemaName = self::getSchemaName($schema);
+        $method = self::methods($backend, 'bulk-query', ['schema' => $schemaName]);
+
+        $json = self::jsonRequest([
+            'method' => $method['type'],
+            'json' => $queries,
+            'headers' => [
+                'X-Appercode-Session-Token' => $backend->token()
+            ],
+            'url' => $method['url'],
+        ]);
+
+        $results = new Collection;
+        foreach ($json as $one) {
+            $part = new Collection();
+            if (isset($one['list']) && is_array($one['list']) && count($one['list'])) {
+                foreach ($one['list'] as $element) {
+                    $part->push(new Element($element, $backend, $schema));
+                }
+            }
+            $results->push([
+                'count' => isset($one['count']) ? (int) $one['count'] : null,
+                'list' => $part
+            ]);
+        }
+
+        return $results;
     }
 }
