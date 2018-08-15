@@ -4,11 +4,14 @@ namespace Appercode;
 
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
+use GuzzleHttp\Exception\BadResponseException;
 
 use Appercode\Schema;
 use Appercode\Backend;
 use Appercode\Traits\AppercodeRequest;
 use Appercode\Traits\SchemaName;
+
+use Appercode\Exceptions\Element\ReceiveException;
 
 class Element
 {
@@ -34,10 +37,15 @@ class Element
                     'type' => 'POST',
                     'url' => $backend->server . $backend->project . '/objects/' . $data['schema'] . '/query?count=true'
                 ];
-            case 'get':
+            case 'list':
                 return [
                     'type' => 'POST',
                     'url' => $backend->server . $backend->project . '/objects/' . $data['schema'] . '/query'
+                ];
+            case 'find':
+                return [
+                    'type' => 'GET',
+                    'url' => $backend->server . $backend->project . '/objects/' . $data['schema'] . '/' . $data['id']
                 ];
             case 'create':
                 return [
@@ -58,6 +66,11 @@ class Element
                 return [
                     'type' => 'POST',
                     'url' => $backend->server . $backend->project . '/objects/' . $data['schema'] . '/batch/query'
+                ];
+            case 'bulk-delete':
+                return [
+                    'type' => 'DELETE',
+                    'url' => $backend->server . $backend->project . '/objects/' . $data['schema'] . '/batch'
                 ];
 
             default:
@@ -150,13 +163,12 @@ class Element
      */
     public function delete(): Element
     {
-        $method = self::methods($backend, 'delete', ['schema' => $this->schemaName, 'id' => $this->id]);
+        $method = self::methods($this->backend, 'delete', ['schema' => $this->schemaName, 'id' => $this->id]);
 
         $json = self::jsonRequest([
             'method' => $method['type'],
-            'json' => $fields,
             'headers' => [
-                'X-Appercode-Session-Token' => $backend->token()
+                'X-Appercode-Session-Token' => $this->backend->token()
             ],
             'url' => $method['url'],
         ]);
@@ -171,16 +183,16 @@ class Element
      * @param  array|null  $filter
      * @return Illuminate\Support\Collection
      */
-    public static function get($schema, Backend $backend, $filter = null): Collection
+    public static function list($schema, Backend $backend, $filter = null): Collection
     {
         $result = new Collection;
 
         $schemaName = self::getSchemaName($schema);
-        $method = self::methods($backend, 'get', ['schema' => $schemaName]);
+        $method = self::methods($backend, 'list', ['schema' => $schemaName]);
 
         $json = self::jsonRequest([
             'method' => $method['type'],
-            'json' => $filter,
+            'json' => $filter ?? (object) [],
             'headers' => [
                 'X-Appercode-Session-Token' => $backend->token()
             ],
@@ -192,6 +204,38 @@ class Element
         }
 
         return $result;
+    }
+
+    /**
+     * Returns single element from collection
+     * @param  Appercode\Schema  $schema
+     * @param  string  $id
+     * @param  Appercode\Backend $backend
+     * @return Appercode\Element
+     * @throws Appercode\Exceptions\Element\ReceiveException
+     */
+    public static function find($schema, string $id, Backend $backend): Element
+    {
+        $schemaName = self::getSchemaName($schema);
+        $method = self::methods($backend, 'find', ['schema' => $schemaName, 'id' => $id]);
+
+        try {
+            $json = self::jsonRequest([
+                'method' => $method['type'],
+                'json' => $filter ?? (object) [],
+                'headers' => [
+                    'X-Appercode-Session-Token' => $backend->token()
+                ],
+                'url' => $method['url'],
+            ]);
+        } catch (BadResponseException $e) {
+            $code = $e->hasResponse() ? $e->getResponse()->getStatusCode() : null;
+            $message = $e->hasResponse() ? $e->getResponse()->getBody() : '';
+
+            throw new ReceiveException($message, $code, $e, ['id' => $id]);
+        }
+
+        return new Element($json, $backend, $schema);
     }
 
     /**
@@ -258,5 +302,29 @@ class Element
         }
 
         return $results;
+    }
+
+    /**
+     * Executes batch elements delete request
+     * @param  Appercode\Schema|string  $schema
+     * @param  array   $ids     array of elements id
+     * @param  Appercode\Backend $backend
+     * @return mixed
+     */
+    public static function bulkDelete($schema, array $ids, Backend $backend)
+    {
+        $schemaName = self::getSchemaName($schema);
+        $method = self::methods($backend, 'bulk-delete', ['schema' => $schemaName]);
+
+        $json = self::jsonRequest([
+            'method' => $method['type'],
+            'json' => $ids,
+            'headers' => [
+                'X-Appercode-Session-Token' => $backend->token()
+            ],
+            'url' => $method['url'],
+        ]);
+
+        return true;
     }
 }

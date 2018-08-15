@@ -56,7 +56,7 @@ class Schema
                     'type' => 'DELETE',
                     'url' => $backend->server . $backend->project . '/schemas/' . $data['schema']
                 ];
-            case 'get':
+            case 'find':
                 return [
                     'type' => 'GET',
                     'url' => $backend->server . $backend->project . '/schemas/' . $data['schema']
@@ -308,9 +308,9 @@ class Schema
      * @param  Appercode\Backend $backend
      * @return Appercode\Schema
      */
-    public static function get(string $schemaName, Backend $backend): Schema
+    public static function find(string $schemaName, Backend $backend): Schema
     {
-        $method = self::methods($backend, 'get', ['schema' => $schemaName]);
+        $method = self::methods($backend, 'find', ['schema' => $schemaName]);
 
         $json = self::jsonRequest([
             'method' => $method['type'],

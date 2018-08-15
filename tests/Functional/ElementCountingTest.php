@@ -73,6 +73,7 @@ class ElementCountingTest extends TestCase
     public function test_elements_can_counting_via_elements_manager_with_caching()
     {
         $elementsToCreation = 2;
+        app('config')->set('appercode.elements.caching.enabled', true);
         $elementManager = new ElementManager($this->user->backend);
 
         for ($i = 0; $i < $elementsToCreation; $i++) {
@@ -131,6 +132,9 @@ class ElementCountingTest extends TestCase
         ]));
     }
 
+    /**
+     * @group bulk
+     */
     public function test_elements_can_counting_with_bulk_query()
     {
         $queries = [];
@@ -158,7 +162,7 @@ class ElementCountingTest extends TestCase
     }
 
     /**
-     * @group current
+     * @group bulk
      */
     public function test_elements_can_counting_with_bulk_query_via_manager()
     {

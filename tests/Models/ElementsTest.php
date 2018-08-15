@@ -11,6 +11,8 @@ use Appercode\Schema;
 use Appercode\Services\ElementManager;
 use Appercode\Enums\Schema\FieldTypes as SchemaFieldTypes;
 
+use Appercode\Exceptions\Element\ReceiveException;
+
 use Carbon\Carbon;
 use Ramsey\Uuid\Uuid;
 
@@ -147,6 +149,23 @@ class ElementsTest extends TestCase
         }
     }
 
+    public function test_element_can_be_recivied_from_find_method()
+    {
+        $schema = $this->createSchema($this->user->backend, [
+            [
+                'name' => 'stringSingleField',
+                'type' => SchemaFieldTypes::STRING
+            ]
+        ]);
+
+        $element = Element::create($schema->id, ['stringSingleField' => 'title'], $this->user->backend);
+
+        $newElement = Element::find($schema->id, $element->id, $this->user->backend);
+        $this->assertEquals($element->id, $newElement->id);
+
+        $schema->delete();
+    }
+
     /**
      * @group bulk
      */
@@ -168,7 +187,7 @@ class ElementsTest extends TestCase
 
         Element::update(array_keys($elements), ['stringSingleField' => 'new-title'], $schema, $this->user->backend);
 
-        $newElements = Element::get($schema, $this->user->backend, [
+        $newElements = Element::list($schema, $this->user->backend, [
             'where' => [
                 'id' => [
                     '$in' => array_keys($elements)
@@ -213,7 +232,7 @@ class ElementsTest extends TestCase
             'value' => $additionalValues
         ]], $schema, $this->user->backend);
 
-        $newElements = Element::get($schema, $this->user->backend, [
+        $newElements = Element::list($schema, $this->user->backend, [
             'where' => [
                 'id' => [
                     '$in' => array_keys($elements)
@@ -260,7 +279,7 @@ class ElementsTest extends TestCase
             'value' => $excessValues
         ]], $schema, $this->user->backend);
 
-        $newElements = Element::get($schema, $this->user->backend, [
+        $newElements = Element::list($schema, $this->user->backend, [
             'where' => [
                 'id' => [
                     '$in' => array_keys($elements)
@@ -274,6 +293,66 @@ class ElementsTest extends TestCase
             sort($updatedElement->fields['stringMultipleField']);
             $this->assertEquals($updatedElement->fields['stringMultipleField'], $correntFieldValue);
         }
+
+        $schema->delete();
+    }
+
+    public function test_element_can_be_deleted()
+    {
+        $schema = $this->createSchema($this->user->backend, [
+            [
+                'name' => 'stringSingleField',
+                'type' => SchemaFieldTypes::STRING
+            ]
+        ]);
+
+        $element = Element::create($schema->id, ['stringSingleField' => 'title'], $this->user->backend);
+        $element->delete();
+
+        $elements = Element::list($schema, $this->user->backend);
+        $this->assertEquals($elements->count(), 0);
+
+        $schema->delete();
+    }
+
+    public function test_deleted_element_receiving_throws_correct_exception()
+    {
+        $schema = $this->createSchema($this->user->backend, [
+            [
+                'name' => 'stringSingleField',
+                'type' => SchemaFieldTypes::STRING
+            ]
+        ]);
+
+        $element = Element::create($schema->id, ['stringSingleField' => 'title'], $this->user->backend);
+        $schema->delete();
+
+        $this->expectException(ReceiveException::class);
+        Element::find($schema, $element->id, $this->user->backend);
+    }
+
+    /**
+     * @group bulk
+     */
+    public function test_elements_can_be_deleted_with_bulk_request()
+    {
+        $elements = [];
+        $schema = $this->createSchema($this->user->backend, [
+            [
+                'name' => 'stringSingleField',
+                'type' => SchemaFieldTypes::STRING
+            ]
+        ]);
+
+        for ($i = 0; $i < 5; $i++) {
+            $element = Element::create($schema->id, ['stringSingleField' => 'test'], $this->user->backend);
+            $elements[$element->id] = $element;
+        }
+
+        Element::bulkDelete($schema->id, array_keys($elements), $this->user->backend);
+
+        $elements = Element::list($schema, $this->user->backend);
+        $this->assertEquals($elements->count(), 0);
 
         $schema->delete();
     }
