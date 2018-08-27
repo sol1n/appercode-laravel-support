@@ -2,7 +2,7 @@
 
 namespace Appercode\Traits;
 
-use Appercode\Backend;
+use Appercode\User;
 use GuzzleHttp\Client;
 use GuzzleHttp\Psr7\Response as GuzzleResponse;
 use GuzzleHttp\Exception\ClientException;
@@ -80,24 +80,6 @@ trait AppercodeRequest
     }
 
     /**
-     * Gets new appercode token
-     * @return Backend with new token
-     */
-    private static function regenerateToken(): Backend
-    {
-        // $user = new User();
-
-        // $user->regenerate(app(Backend::class));
-
-        // $backend = app(Backend::class);
-        // $backend->token = $user->token();
-
-        // app()->instance(Backend::class, $backend);
-
-        return $backend;
-    }
-
-    /**
      * Checks that exception can be handled by regeneration appercode token
      * @param  GuzzleHttp\Exception\ClientException $e
      * @return bool true, if exception have unauthorized response code
@@ -113,9 +95,10 @@ trait AppercodeRequest
      */
     private static function recallMethod(array $data): GuzzleResponse
     {
-        $backend = self::regenerateToken();
+        $newToken = User::current()->regenerateToken()->token;
+
         if (isset($data['headers']['X-Appercode-Session-Token'])) {
-            $data['headers']['X-Appercode-Session-Token'] = $backend->token;
+            $data['headers']['X-Appercode-Session-Token'] = $newToken;
         }
         return self::request($data);
     }

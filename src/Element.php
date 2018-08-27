@@ -13,7 +13,9 @@ use Appercode\Traits\SchemaName;
 
 use Appercode\Exceptions\Element\ReceiveException;
 
-class Element
+use Appercode\Contracts\ElementContract;
+
+class Element implements ElementContract
 {
     use AppercodeRequest, SchemaName;
 
@@ -140,7 +142,7 @@ class Element
      * @param  Backend $backend    [description]
      * @return [type]              [description]
      */
-    public static function create($schema, array $fields, Backend $backend): Element
+    public static function create($schema, array $fields, Backend $backend): ElementContract
     {
         $schemaName = self::getSchemaName($schema);
         $method = self::methods($backend, 'create', ['schema' => $schemaName]);
@@ -157,11 +159,30 @@ class Element
         return new Element($json, $backend, $schema);
     }
 
+    public static function update($schema, string $id, array $fields, Backend $backend)
+    {
+    }
+
+    public function save(): ElementContract
+    {
+        $schemaName = self::getSchemaName($schema);
+        $method = self::methods($backend, 'create', ['schema' => $schemaName]);
+
+        $json = self::jsonRequest([
+            'method' => $method['type'],
+            'json' => $fields,
+            'headers' => [
+                'X-Appercode-Session-Token' => $backend->token()
+            ],
+            'url' => $method['url'],
+        ]);
+    }
+
     /**
      * Deletes current element
      * @return Appercode\Element removed element instance
      */
-    public function delete(): Element
+    public function delete(): ElementContract
     {
         $method = self::methods($this->backend, 'delete', ['schema' => $this->schemaName, 'id' => $this->id]);
 
@@ -190,14 +211,21 @@ class Element
         $schemaName = self::getSchemaName($schema);
         $method = self::methods($backend, 'list', ['schema' => $schemaName]);
 
-        $json = self::jsonRequest([
-            'method' => $method['type'],
-            'json' => $filter ?? (object) [],
-            'headers' => [
-                'X-Appercode-Session-Token' => $backend->token()
-            ],
-            'url' => $method['url'],
-        ]);
+        try {
+            $json = self::jsonRequest([
+                'method' => $method['type'],
+                'json' => $filter ?? (object) [],
+                'headers' => [
+                    'X-Appercode-Session-Token' => $backend->token()
+                ],
+                'url' => $method['url'],
+            ]);
+        } catch (BadResponseException $e) {
+            $code = $e->hasResponse() ? $e->getResponse()->getStatusCode() : null;
+            $message = $e->hasResponse() ? $e->getResponse()->getBody() : '';
+
+            throw new ReceiveException($message, $code, $e, ['schema' => $schemaName]);
+        }
 
         foreach ($json as $element) {
             $result->push(new Element($element, $backend, $schema));
@@ -214,7 +242,7 @@ class Element
      * @return Appercode\Element
      * @throws Appercode\Exceptions\Element\ReceiveException
      */
-    public static function find($schema, string $id, Backend $backend): Element
+    public static function find($schema, string $id, Backend $backend): ElementContract
     {
         $schemaName = self::getSchemaName($schema);
         $method = self::methods($backend, 'find', ['schema' => $schemaName, 'id' => $id]);
@@ -232,7 +260,7 @@ class Element
             $code = $e->hasResponse() ? $e->getResponse()->getStatusCode() : null;
             $message = $e->hasResponse() ? $e->getResponse()->getBody() : '';
 
-            throw new ReceiveException($message, $code, $e, ['id' => $id]);
+            throw new ReceiveException($message, $code, $e, ['schema' => $schemaName, 'id' => $id]);
         }
 
         return new Element($json, $backend, $schema);
@@ -246,7 +274,7 @@ class Element
      * @param  Backend $backend
      * @return boolean
      */
-    public static function update(array $ids, array $changes, $schema, Backend $backend)
+    public static function bulkUpdate($schema, array $ids, array $changes, Backend $backend)
     {
         $schemaName = self::getSchemaName($schema);
         $method = self::methods($backend, 'bulk-update', ['schema' => $schemaName]);
