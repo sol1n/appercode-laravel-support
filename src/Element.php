@@ -31,6 +31,7 @@ class Element implements ElementContract
     public $isPublished;
 
     public $fields;
+    public $languages = [];
 
     private static function methods(Backend $backend, string $name, array $data = []): array
     {
@@ -128,6 +129,13 @@ class Element implements ElementContract
         return $this;
     }
 
+    /**
+     * Returns count of elements for schema and filter
+     * @param  Appercode\Schema|string  $schema
+     * @param  Appercode\Backend $backend
+     * @param  array   $query   filter and request params
+     * @return int
+     */
     public static function count($schema, Backend $backend, $query = []): int
     {
         $schemaName = self::getSchemaName($schema);
@@ -194,8 +202,37 @@ class Element implements ElementContract
         }
     }
 
-    public static function updateLanguages($schema, string $id, array $fields, $languages)
+    /**
+     * Saves localized fields values for provided languages
+     * @param  Appercode\Schema|string  $schema
+     * @param  $id
+     * @param  array   $languages as $language => $fieldsValues
+     * @param  Appercode\Backend $backend
+     * @return null
+     */
+    public static function updateLanguages($schema, string $id, array $languages, Backend $backend)
     {
+        $schemaName = self::getSchemaName($schema);
+        $method = self::methods($backend, 'save', ['schema' => $schemaName, 'id' => $id]);
+
+        foreach ($languages as $language => $fields) {
+            try {
+                $json = self::jsonRequest([
+                    'method' => $method['type'],
+                    'json' => $fields,
+                    'headers' => [
+                        'X-Appercode-Session-Token' => $backend->token(),
+                        'X-Appercode-Language' => $language
+                    ],
+                    'url' => $method['url'],
+                ]);
+            } catch (BadResponseException $e) {
+                $code = $e->hasResponse() ? $e->getResponse()->getStatusCode() : null;
+                $message = $e->hasResponse() ? $e->getResponse()->getBody() : '';
+
+                throw new SaveException($message, $code, $e, ['schema' => $schemaName, 'id' => $id, 'fields' => $fields, 'language' => $language]);
+            }
+        }
     }
 
     /**
@@ -226,9 +263,45 @@ class Element implements ElementContract
         return $this;
     }
 
+    /**
+     * Loads localized fields values for provided languages
+     * @param  array|string $languages
+     * @return Appercode\Contracts\ElementContract
+     */
     public function getLanguages($languages): ElementContract
     {
-        return $this;
+        if (is_string($languages) && $languages) {
+            $languages = [$languages];
+        }
+
+        if (is_array($languages)) {
+            foreach ($languages as $language) {
+                $method = self::methods($this->backend, 'find', [
+                    'schema' => $this->schemaName,
+                    'id' => $this->id
+                ]);
+                $json = self::jsonRequest([
+                    'method' => $method['type'],
+                    'headers' => [
+                        'X-Appercode-Session-Token' => $this->backend->token(),
+                        'X-Appercode-Language' => $language
+                    ],
+                    'url' => $method['url'],
+                ]);
+
+                $languageFields = [];
+                foreach ($json as $key => $field) {
+                    if (! $this->isInnerField($key)) {
+                        $languageFields[$key] = $field;
+                    }
+                }
+
+                $this->languages[$language] = $languageFields;
+            }
+            return $this;
+        }
+
+        throw new \InvalidArgumentException('Languages parameter should be array or string type');
     }
 
     /**
@@ -304,7 +377,6 @@ class Element implements ElementContract
         try {
             $json = self::jsonRequest([
                 'method' => $method['type'],
-                'json' => $filter ?? (object) [],
                 'headers' => [
                     'X-Appercode-Session-Token' => $backend->token()
                 ],

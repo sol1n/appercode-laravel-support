@@ -15,7 +15,7 @@ interface ElementContract
     public static function find($schema, string $id, Backend $backend): ElementContract;
     public static function list($schema, Backend $backend, $filter = null, $languages = []): Collection;
     public static function update($schema, string $id, array $fields, Backend $backend);
-    public static function updateLanguages($schema, string $id, array $fields, $languages);
+    public static function updateLanguages($schema, string $id, array $languages, Backend $backend);
 
     /**
      * Bulk methods
