@@ -13,8 +13,9 @@ interface ElementContract
     public static function count($schema, Backend $backend, $query = []): int;
     public static function create($schema, array $fields, Backend $backend): ElementContract;
     public static function find($schema, string $id, Backend $backend): ElementContract;
-    public static function list($schema, Backend $backend, $filter = null): Collection;
+    public static function list($schema, Backend $backend, $filter = null, $languages = []): Collection;
     public static function update($schema, string $id, array $fields, Backend $backend);
+    public static function updateLanguages($schema, string $id, array $fields, $languages);
 
     /**
      * Bulk methods
@@ -27,5 +28,6 @@ interface ElementContract
      * Non-static methods
      */
     public function save(): ElementContract;
+    public function getLanguages($languages): ElementContract;
     public function delete(): ElementContract;
 }

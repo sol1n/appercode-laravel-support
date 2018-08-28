@@ -11,7 +11,7 @@ use Appercode\Schema;
 use Appercode\Services\ElementManager;
 use Appercode\Enums\Schema\FieldTypes as SchemaFieldTypes;
 
-class ElementBulkOperations extends TestCase
+class ElementBulkOperationsTest extends TestCase
 {
     private $user;
 
@@ -158,6 +158,32 @@ class ElementBulkOperations extends TestCase
             sort($updatedElement->fields['stringMultipleField']);
             $this->assertEquals($updatedElement->fields['stringMultipleField'], $correntFieldValue);
         }
+
+        $schema->delete();
+    }
+
+    /**
+     * @group bulk
+     */
+    public function test_elements_can_be_deleted_with_bulk_request()
+    {
+        $elements = [];
+        $schema = $this->createSchema($this->user->backend, [
+            [
+                'name' => 'stringSingleField',
+                'type' => SchemaFieldTypes::STRING
+            ]
+        ]);
+
+        for ($i = 0; $i < 5; $i++) {
+            $element = Element::create($schema->id, ['stringSingleField' => 'test'], $this->user->backend);
+            $elements[$element->id] = $element;
+        }
+
+        Element::bulkDelete($schema->id, array_keys($elements), $this->user->backend);
+
+        $elements = Element::list($schema, $this->user->backend);
+        $this->assertEquals($elements->count(), 0);
 
         $schema->delete();
     }

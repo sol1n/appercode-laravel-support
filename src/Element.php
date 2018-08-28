@@ -12,6 +12,7 @@ use Appercode\Traits\AppercodeRequest;
 use Appercode\Traits\SchemaName;
 
 use Appercode\Exceptions\Element\ReceiveException;
+use Appercode\Exceptions\Element\SaveException;
 
 use Appercode\Contracts\ElementContract;
 
@@ -53,6 +54,11 @@ class Element implements ElementContract
                 return [
                     'type' => 'POST',
                     'url' => $backend->server . $backend->project . '/objects/' . $data['schema']
+                ];
+            case 'save':
+                return [
+                    'type' => 'PUT',
+                    'url' => $backend->server . $backend->project . '/objects/' . $data['schema'] . '/' . $data['id']
                 ];
             case 'delete':
                 return [
@@ -127,20 +133,27 @@ class Element implements ElementContract
         $schemaName = self::getSchemaName($schema);
         $method = self::methods($backend, 'count', ['schema' => $schemaName]);
 
-        return self::countRequest([
-            'json' => count($query) ? $query : (object)[],
-            'url' => $method['url'],
-            'method' => $method['type'],
-            'headers' => ['X-Appercode-Session-Token' => $backend->token()],
-        ]);
+        try {
+            return self::countRequest([
+                'json' => count($query) ? $query : (object)[],
+                'url' => $method['url'],
+                'method' => $method['type'],
+                'headers' => ['X-Appercode-Session-Token' => $backend->token()],
+            ]);
+        } catch (BadResponseException $e) {
+            $code = $e->hasResponse() ? $e->getResponse()->getStatusCode() : null;
+            $message = $e->hasResponse() ? $e->getResponse()->getBody() : '';
+
+            throw new ReceiveException($message, $code, $e, ['schema' => $schemaName, $query => $query, 'count' => true]);
+        }
     }
 
     /**
      * Creates new element in selected schema
-     * @param  Appercode/Schema|string  $schema The schema in which the element will be created
-     * @param  array   $fields     [description]
-     * @param  Backend $backend    [description]
-     * @return [type]              [description]
+     * @param  Appercode/Schema|string  $schema Schema of a new element
+     * @param  array   $fields
+     * @param  Appercode\Backend $backend
+     * @return Appercode\Contracts\ElementContract
      */
     public static function create($schema, array $fields, Backend $backend): ElementContract
     {
@@ -161,21 +174,61 @@ class Element implements ElementContract
 
     public static function update($schema, string $id, array $fields, Backend $backend)
     {
+        $schemaName = self::getSchemaName($schema);
+        $method = self::methods($backend, 'save', ['schema' => $schemaName, 'id' => $id]);
+
+        try {
+            $json = self::jsonRequest([
+                'method' => $method['type'],
+                'json' => $fields,
+                'headers' => [
+                    'X-Appercode-Session-Token' => $backend->token()
+                ],
+                'url' => $method['url'],
+            ]);
+        } catch (BadResponseException $e) {
+            $code = $e->hasResponse() ? $e->getResponse()->getStatusCode() : null;
+            $message = $e->hasResponse() ? $e->getResponse()->getBody() : '';
+
+            throw new SaveException($message, $code, $e, ['schema' => $schemaName, 'id' => $id, 'fields' => $fields]);
+        }
     }
 
+    public static function updateLanguages($schema, string $id, array $fields, $languages)
+    {
+    }
+
+    /**
+     * Save element instance fields changes to appercode backend
+     * @throws Appercode\Exceptions\Element\SaveException
+     * @return Appercode\Contracts\ElementContract current element instance
+     */
     public function save(): ElementContract
     {
-        $schemaName = self::getSchemaName($schema);
-        $method = self::methods($backend, 'create', ['schema' => $schemaName]);
+        $method = self::methods($this->backend, 'save', ['schema' => $this->schemaName, 'id' => $this->id]);
 
-        $json = self::jsonRequest([
-            'method' => $method['type'],
-            'json' => $fields,
-            'headers' => [
-                'X-Appercode-Session-Token' => $backend->token()
-            ],
-            'url' => $method['url'],
-        ]);
+        try {
+            $json = self::jsonRequest([
+                'method' => $method['type'],
+                'json' => $this->fields,
+                'headers' => [
+                    'X-Appercode-Session-Token' => $this->backend->token()
+                ],
+                'url' => $method['url'],
+            ]);
+        } catch (BadResponseException $e) {
+            $code = $e->hasResponse() ? $e->getResponse()->getStatusCode() : null;
+            $message = $e->hasResponse() ? $e->getResponse()->getBody() : '';
+
+            throw new SaveException($message, $code, $e, ['object' => $this]);
+        }
+
+        return $this;
+    }
+
+    public function getLanguages($languages): ElementContract
+    {
+        return $this;
     }
 
     /**
@@ -202,9 +255,10 @@ class Element implements ElementContract
      * @param  Appercode\Schema|string  $schema
      * @param  Appercode\Backend $backend
      * @param  array|null  $filter
+     * @param  array|string  $languages
      * @return Illuminate\Support\Collection
      */
-    public static function list($schema, Backend $backend, $filter = null): Collection
+    public static function list($schema, Backend $backend, $filter = null, $languages = []): Collection
     {
         $result = new Collection;
 

@@ -11,6 +11,7 @@ use Appercode\Schema;
 use Appercode\Services\ElementManager;
 use Appercode\Enums\Schema\FieldTypes as SchemaFieldTypes;
 
+use Appercode\Exceptions\Element\SaveException;
 use Appercode\Exceptions\Element\ReceiveException;
 
 use Carbon\Carbon;
@@ -25,6 +26,15 @@ class ElementsTest extends TestCase
         parent::setUp();
 
         $this->user = User::login((new Backend), getenv('APPERCODE_USER'), getenv('APPERCODE_PASSWORD'));
+    }
+
+    protected function tearDown()
+    {
+        try {
+            $schema = Schema::find('elementsTestSchema', $this->user->backend);
+            $schema->delete();
+        } catch (\Exception $e) {
+        }
     }
 
     private function createSchema(Backend $backend, $fields = [])
@@ -162,8 +172,43 @@ class ElementsTest extends TestCase
 
         $newElement = Element::find($schema->id, $element->id, $this->user->backend);
         $this->assertEquals($element->id, $newElement->id);
+    }
 
-        $schema->delete();
+    public function test_element_can_be_recivied_from_list_method()
+    {
+        $schema = $this->createSchema($this->user->backend, [
+            [
+                'name' => 'stringSingleField',
+                'type' => SchemaFieldTypes::STRING
+            ]
+        ]);
+
+        $element = Element::create($schema->id, ['stringSingleField' => 'title'], $this->user->backend);
+
+        $elements = Element::list($schema->id, $this->user->backend);
+        $this->assertEquals($element->id, $elements->first()->id);
+    }
+
+    public function test_elements_list_method_throws_correct_exception()
+    {
+        $schema = $this->createSchema($this->user->backend, [
+            [
+                'name' => 'stringSingleField',
+                'type' => SchemaFieldTypes::STRING
+            ]
+        ]);
+
+        Element::create($schema->id, ['stringSingleField' => 'title'], $this->user->backend);
+
+        $this->expectException(ReceiveException::class);
+
+        Element::list($schema, $this->user->backend, [
+            'where' => [
+                'id' => [
+                    'wrong array value'
+                ]
+            ]
+        ]);
     }
 
     public function test_element_can_be_deleted()
@@ -180,8 +225,6 @@ class ElementsTest extends TestCase
 
         $elements = Element::list($schema, $this->user->backend);
         $this->assertEquals($elements->count(), 0);
-
-        $schema->delete();
     }
 
     public function test_deleted_element_receiving_throws_correct_exception()
@@ -194,35 +237,125 @@ class ElementsTest extends TestCase
         ]);
 
         $element = Element::create($schema->id, ['stringSingleField' => 'title'], $this->user->backend);
-        $schema->delete();
+        $element->delete();
 
         $this->expectException(ReceiveException::class);
         Element::find($schema, $element->id, $this->user->backend);
     }
 
-    /**
-     * @group bulk
-     */
-    public function test_elements_can_be_deleted_with_bulk_request()
+    public function test_element_saving_test()
     {
-        $elements = [];
         $schema = $this->createSchema($this->user->backend, [
             [
                 'name' => 'stringSingleField',
                 'type' => SchemaFieldTypes::STRING
+            ],
+            [
+                'name' => 'stringMultipleField',
+                'type' => SchemaFieldTypes::STRING,
+                'multiple' => true,
+            ],
+            [
+                'name' => 'integerSingleField',
+                'type' => SchemaFieldTypes::INTEGER
+            ],
+            [
+                'name' => 'textSingleField',
+                'type' => SchemaFieldTypes::TEXT
             ]
         ]);
 
-        for ($i = 0; $i < 5; $i++) {
-            $element = Element::create($schema->id, ['stringSingleField' => 'test'], $this->user->backend);
-            $elements[$element->id] = $element;
-        }
+        $element = Element::create($schema, [
+            'stringSingleField' => 'stringSingleField',
+            'stringMultipleField' => [
+                'stringMultipleField1',
+                'stringMultipleField2',
+            ],
+            'integerSingleField' => 1,
+            'textSingleField' => 'textSingleField'
+        ], $this->user->backend);
 
-        Element::bulkDelete($schema->id, array_keys($elements), $this->user->backend);
+        $element->fields['stringSingleField'] = 'stringSingleField2';
+        $element->fields['stringMultipleField'] = [
+            'stringMultipleField3',
+            'stringMultipleField4'
+        ];
+        $element->fields['integerSingleField'] = 2;
+        $element->fields['textSingleField'] = 'textSingleField2';
 
-        $elements = Element::list($schema, $this->user->backend);
-        $this->assertEquals($elements->count(), 0);
+        $element->save();
 
-        $schema->delete();
+        $newElement = Element::find($schema, $element->id, $this->user->backend);
+
+        $this->assertEquals($element->id, $newElement->id);
+        $this->assertEquals($element->fields, $newElement->fields);
+    }
+
+    public function test_element_can_be_updated_with_static_method()
+    {
+        $schema = $this->createSchema($this->user->backend, [
+            [
+                'name' => 'stringSingleField',
+                'type' => SchemaFieldTypes::STRING
+            ],
+            [
+                'name' => 'stringMultipleField',
+                'type' => SchemaFieldTypes::STRING,
+                'multiple' => true,
+            ],
+            [
+                'name' => 'integerSingleField',
+                'type' => SchemaFieldTypes::INTEGER
+            ],
+            [
+                'name' => 'textSingleField',
+                'type' => SchemaFieldTypes::TEXT
+            ]
+        ]);
+        
+        $element = Element::create($schema, [
+            'stringSingleField' => 'stringSingleField',
+            'stringMultipleField' => [
+                'stringMultipleField1',
+                'stringMultipleField2',
+            ],
+            'integerSingleField' => 1,
+            'textSingleField' => 'textSingleField'
+        ], $this->user->backend);
+
+        $newData = [
+            'stringSingleField' => 'stringSingleField2',
+            'stringMultipleField' => [
+                'stringMultipleField3',
+                'stringMultipleField4'
+            ],
+            'integerSingleField' => 2,
+            'textSingleField' => 'textSingleField2'
+        ];
+
+        Element::update($schema, $element->id, $newData, $this->user->backend);
+
+        $newElement = Element::find($schema, $element->id, $this->user->backend);
+
+        $this->assertArraySubset($newData, $newElement->fields);
+    }
+
+    public function test_element_save_method_throws_correct_exception()
+    {
+        $schema = $this->createSchema($this->user->backend, [
+            [
+                'name' => 'integerSingleField',
+                'type' => SchemaFieldTypes::INTEGER
+            ]
+        ]);
+        
+        $element = Element::create($schema, [
+            'integerSingleField' => 1
+        ], $this->user->backend);
+
+        $this->expectException(SaveException::class);
+
+        $element->fields['integerSingleField'] = 'wrong value';
+        $element->save();
     }
 }
