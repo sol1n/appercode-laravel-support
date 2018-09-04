@@ -14,7 +14,7 @@ use Appercode\Traits\SchemaName;
 use Appercode\Exceptions\Element\ReceiveException;
 use Appercode\Exceptions\Element\SaveException;
 
-use Appercode\Contracts\ElementContract;
+use Appercode\Contracts\Element as ElementContract;
 
 class Element implements ElementContract
 {

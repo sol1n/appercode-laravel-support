@@ -5,14 +5,14 @@ namespace Appercode\Contracts;
 use Appercode\Backend;
 use Illuminate\Support\Collection;
 
-interface ElementContract
+interface Element
 {
     /**
      * Static methods
      */
     public static function count($schema, Backend $backend, $query = []): int;
-    public static function create($schema, array $fields, Backend $backend): ElementContract;
-    public static function find($schema, string $id, Backend $backend): ElementContract;
+    public static function create($schema, array $fields, Backend $backend): Element;
+    public static function find($schema, string $id, Backend $backend): Element;
     public static function list($schema, Backend $backend, $filter = null, $languages = []): Collection;
     public static function update($schema, string $id, array $fields, Backend $backend);
     public static function updateLanguages($schema, string $id, array $languages, Backend $backend);
@@ -27,7 +27,7 @@ interface ElementContract
     /**
      * Non-static methods
      */
-    public function save(): ElementContract;
-    public function getLanguages($languages): ElementContract;
-    public function delete(): ElementContract;
+    public function save(): Element;
+    public function getLanguages($languages): Element;
+    public function delete(): Element;
 }
