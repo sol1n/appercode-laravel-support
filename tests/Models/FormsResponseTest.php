@@ -12,8 +12,6 @@ use Appercode\FormResponse;
 
 use Appercode\Enums\Form\Types as FormTypes;
 
-use Appercode\Exceptions\Form\CreateException;
-
 use Carbon\Carbon;
 
 class FormsResponseTest extends TestCase
@@ -85,12 +83,11 @@ class FormsResponseTest extends TestCase
 
         $response = FormResponse::create($answers, $form->id, $this->user->backend);
 
+        $this->assertEquals($response->formId, $form->id);
+
         $form->delete();
     }
 
-    /**
-     * @group current
-     */
     public function test_responses_can_be_recieved_by_list_method()
     {
         $form = Form::create($this->formData(), $this->user->backend);
@@ -110,6 +107,9 @@ class FormsResponseTest extends TestCase
                 'formId' => $form->id
             ]
         ]);
+
+        $this->assertEquals($responses->count(), 1);
+        $this->assertEquals($responses->first()->formId, $form->id);
 
         $form->delete();
     }

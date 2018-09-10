@@ -20,6 +20,18 @@ class FormResponse implements FormResponseContract
     private $backend;
 
     public $id;
+    public $userId;
+    public $formId;
+
+    public $createdAt;
+    public $updatedAt;
+    public $startedAt;
+    public $submittedAt;
+
+    public $language;
+    public $response;
+    public $submittedCount;
+    public $correctCount;
 
     private static function methods(Backend $backend, string $name, array $data = []): array
     {
@@ -48,6 +60,18 @@ class FormResponse implements FormResponseContract
     public function __construct(array $data, Backend $backend)
     {
         $this->id = $data['id'];
+        $this->userId = $data['userId'];
+        $this->formId = $data['formId'];
+        $this->language = $data['language'];
+        $this->response = $data['response'];
+        $this->submittedCount = $data['submittedCount'];
+        $this->correctCount = $data['correctCount'];
+
+        $this->createdAt = new Carbon($data['createdAt']) ?? null;
+        $this->updatedAt = new Carbon($data['updatedAt']) ?? null;
+        $this->startedAt = new Carbon($data['startedAt']) ?? null;
+        $this->submittedAt = new Carbon($data['submittedAt']) ?? null;
+
 
         $this->backend = $backend;
 
@@ -80,9 +104,7 @@ class FormResponse implements FormResponseContract
 
             $id = str_replace('"', '', $id);
 
-            return new FormResponse([
-                'id' => $id
-            ], $backend);
+            return FormResponse::find($backend, $id);
 
         } catch (BadResponseException $e) {
             $code = $e->hasResponse() ? $e->getResponse()->getStatusCode() : null;
