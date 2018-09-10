@@ -160,4 +160,25 @@ class Form implements FormContract
 
         return $this;
     }
+
+    public function controls(): Collection
+    {
+        $result = [];
+        foreach ($this->parts as $part) {
+            foreach ($part['sections'] as $section) {
+                foreach ($section['groups'] as $group) {
+                    $result = array_merge($result, $group['controls']);
+                }
+            }
+        }
+
+        return collect($result);
+    }
+
+    public function questions(): Collection
+    {
+        return $this->controls()->mapWithKeys(function ($item) {
+            return [$item['id'] => $item];
+        });
+    }
 }
