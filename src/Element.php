@@ -370,8 +370,42 @@ class Element implements ElementContract
             throw new ReceiveException($message, $code, $e, ['schema' => $schemaName]);
         }
 
-        foreach ($json as $element) {
-            $result->push(new Element($element, $backend, $schema));
+        $languagesFields = [];
+        if (count($languages) && count($json)) {
+            $ids = collect($json)->map(function($item) {
+                return $item['id'];
+            });
+
+            foreach ($languages as $language) {
+                $languagesFields[$language] = collect(self::jsonRequest([
+                    'method' => $method['type'],
+                    'json' => [
+                        'take' => -1,
+                        'where' => [
+                            'id' => [
+                                '$in' => $ids
+                            ]
+                        ]
+                    ],
+                    'headers' => [
+                        'X-Appercode-Session-Token' => $backend->token(),
+                        'X-Appercode-Language' => $language
+                    ],
+                    'url' => $method['url'],
+                ]))->mapWithKeys(function($item) {
+                    return [$item['id'] => $item];
+                });
+            }
+        }
+
+        foreach ($json as $jsonElement) {
+            $element = new Element($jsonElement, $backend, $schema);
+            foreach ($languagesFields as $language => $languageFields) {
+                if (isset($languageFields[$element->id])) {
+                    $element->languages[$language] = $languageFields[$element->id];
+                }
+            }
+            $result->push($element);
         }
 
         return $result;

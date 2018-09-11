@@ -393,4 +393,41 @@ class ElementsTest extends TestCase
         $this->assertEquals($newElement->languages['en']['integerSingleField'], 2);
         $this->assertEquals($newElement->languages['en']['stringSingleField'], 'enValue');
     }
+
+    public function test_element_list_method_can_returns_localized_fields()
+    {
+        $schema = $this->createSchema($this->user->backend, [
+            [
+                'name' => 'stringSingleField',
+                'type' => SchemaFieldTypes::STRING,
+                'localized' => true
+            ],
+            [
+                'name' => 'integerSingleField',
+                'type' => SchemaFieldTypes::INTEGER,
+                'localized' => true
+            ]
+        ]);
+
+        $element = Element::create($schema, [
+            'stringSingleField' => 'ruValue',
+            'integerSingleField' => 1
+        ], $this->user->backend);
+
+        Element::updateLanguages($schema, $element->id, [
+            'en' => [
+                'stringSingleField' => 'enValue',
+                'integerSingleField' => 2
+            ]
+        ], $this->user->backend);
+
+        $newElement = Element::list($schema, $this->user->backend, [
+            'take' => -1
+        ], ['en'])->first();
+
+        $this->assertEquals($newElement->fields['integerSingleField'], 1);
+        $this->assertEquals($newElement->fields['stringSingleField'], 'ruValue');
+        $this->assertEquals($newElement->languages['en']['integerSingleField'], 2);
+        $this->assertEquals($newElement->languages['en']['stringSingleField'], 'enValue');
+    }
 }
