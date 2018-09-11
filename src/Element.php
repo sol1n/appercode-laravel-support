@@ -2,19 +2,20 @@
 
 namespace Appercode;
 
-use Carbon\Carbon;
-use Illuminate\Support\Collection;
-use GuzzleHttp\Exception\BadResponseException;
-
-use Appercode\Schema;
-use Appercode\Backend;
 use Appercode\Traits\AppercodeRequest;
 use Appercode\Traits\SchemaName;
+
+use Appercode\Contracts\Element as ElementContract;
 
 use Appercode\Exceptions\Element\ReceiveException;
 use Appercode\Exceptions\Element\SaveException;
 
-use Appercode\Contracts\Element as ElementContract;
+use Appercode\Schema;
+use Appercode\Backend;
+
+use Carbon\Carbon;
+use Illuminate\Support\Collection;
+use GuzzleHttp\Exception\BadResponseException;
 
 class Element implements ElementContract
 {
@@ -180,7 +181,15 @@ class Element implements ElementContract
         return new Element($json, $backend, $schema);
     }
 
-    public static function update($schema, string $id, array $fields, Backend $backend)
+    /**
+     * Static method for saving selected fields without getting model
+     * @param  Appercode\Schema|string $schema
+     * @param  string  $id
+     * @param  array   $fields
+     * @param  Appercode\Backend $backend
+     * @return void
+     */
+    public static function update($schema, string $id, array $fields, Backend $backend): void
     {
         $schemaName = self::getSchemaName($schema);
         $method = self::methods($backend, 'save', ['schema' => $schemaName, 'id' => $id]);
@@ -208,9 +217,9 @@ class Element implements ElementContract
      * @param  $id
      * @param  array   $languages as $language => $fieldsValues
      * @param  Appercode\Backend $backend
-     * @return null
+     * @return void
      */
-    public static function updateLanguages($schema, string $id, array $languages, Backend $backend)
+    public static function updateLanguages($schema, string $id, array $languages, Backend $backend): void
     {
         $schemaName = self::getSchemaName($schema);
         $method = self::methods($backend, 'save', ['schema' => $schemaName, 'id' => $id]);
@@ -312,13 +321,20 @@ class Element implements ElementContract
     {
         $method = self::methods($this->backend, 'delete', ['schema' => $this->schemaName, 'id' => $this->id]);
 
-        $json = self::jsonRequest([
-            'method' => $method['type'],
-            'headers' => [
-                'X-Appercode-Session-Token' => $this->backend->token()
-            ],
-            'url' => $method['url'],
-        ]);
+        try {
+            $json = self::jsonRequest([
+                'method' => $method['type'],
+                'headers' => [
+                    'X-Appercode-Session-Token' => $this->backend->token()
+                ],
+                'url' => $method['url'],
+            ]);
+        } catch (BadResponseException $e) {
+            $code = $e->hasResponse() ? $e->getResponse()->getStatusCode() : null;
+            $message = $e->hasResponse() ? $e->getResponse()->getBody() : '';
+
+            throw new DeleteException($message, $code, $e, ['schema' => $this->schemaName]);
+        }
 
         return $this;
     }
@@ -398,9 +414,9 @@ class Element implements ElementContract
      * @param  array   $changes
      * @param  Appercode\Schema|string  $schema
      * @param  Backend $backend
-     * @return boolean
+     * @return void
      */
-    public static function bulkUpdate($schema, array $ids, array $changes, Backend $backend)
+    public static function bulkUpdate($schema, array $ids, array $changes, Backend $backend): void
     {
         $schemaName = self::getSchemaName($schema);
         $method = self::methods($backend, 'bulk-update', ['schema' => $schemaName]);
@@ -416,8 +432,6 @@ class Element implements ElementContract
             ],
             'url' => $method['url'],
         ]);
-
-        return true;
     }
 
     /**
@@ -463,22 +477,27 @@ class Element implements ElementContract
      * @param  Appercode\Schema|string  $schema
      * @param  array   $ids     array of elements id
      * @param  Appercode\Backend $backend
-     * @return mixed
+     * @return void
      */
-    public static function bulkDelete($schema, array $ids, Backend $backend)
+    public static function bulkDelete($schema, array $ids, Backend $backend): void
     {
         $schemaName = self::getSchemaName($schema);
         $method = self::methods($backend, 'bulk-delete', ['schema' => $schemaName]);
 
-        $json = self::jsonRequest([
-            'method' => $method['type'],
-            'json' => $ids,
-            'headers' => [
-                'X-Appercode-Session-Token' => $backend->token()
-            ],
-            'url' => $method['url'],
-        ]);
+        try {
+            $json = self::jsonRequest([
+                'method' => $method['type'],
+                'json' => $ids,
+                'headers' => [
+                    'X-Appercode-Session-Token' => $backend->token()
+                ],
+                'url' => $method['url'],
+            ]);
+        } catch (BadResponseException $e) {
+            $code = $e->hasResponse() ? $e->getResponse()->getStatusCode() : null;
+            $message = $e->hasResponse() ? $e->getResponse()->getBody() : '';
 
-        return true;
+            throw new DeleteException($message, $code, $e, ['schema' => $schemaName]);
+        }
     }
 }

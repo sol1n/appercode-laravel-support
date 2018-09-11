@@ -113,4 +113,25 @@ class FormsResponseTest extends TestCase
 
         $form->delete();
     }
+
+    // public function test_responses_can_be_counted()
+    // {
+    //     $form = Form::create($this->formData(), $this->user->backend);
+
+    //     $questions = $form->questions();
+    //     $templates = $this->templateAnswers();
+
+    //     $answers = [];
+    //     foreach ($questions as $question) {
+    //         $answers[$question['id']] = $templates[$question['type']];
+    //     }
+
+    //     FormResponse::create($answers, $form->id, $this->user->backend);
+
+    //     $responsesCount = FormResponse::count($this->user->backend);
+
+    //     $this->assertEquals($responsesCount, 1);
+
+    //     $form->delete();
+    // }
 }

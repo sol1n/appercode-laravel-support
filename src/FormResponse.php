@@ -78,7 +78,14 @@ class FormResponse implements FormResponseContract
         return $this;
     }
 
-    public static function create(array $fields, string $formId, Backend $backend): FormResponseContract
+    /**
+     * Creates response for selected form
+     * @param  array   $answers  answer values keyed by control ids
+     * @param  string  $formId
+     * @param  Appercode\Backend $backend
+     * @return Appercode\Contracts\FormResponseContract
+     */
+    public static function create(array $answers, string $formId, Backend $backend): FormResponseContract
     {
         try {
             $method = self::methods($backend, 'startForm', ['form' => $formId]);
@@ -94,7 +101,7 @@ class FormResponse implements FormResponseContract
             $method = self::methods($backend, 'create', ['form' => $formId]);
             $id = (string) self::request([
                 'method' => $method['type'],
-                'json' => $fields,
+                'json' => $answers,
                 'headers' => [
                     'X-Appercode-Session-Token' => $backend->token(),
                     'Accept' => 'application/json'
@@ -110,10 +117,16 @@ class FormResponse implements FormResponseContract
             $code = $e->hasResponse() ? $e->getResponse()->getStatusCode() : null;
             $message = $e->hasResponse() ? $e->getResponse()->getBody() : '';
 
-            throw new CreateException($message, $code, $e, ['fields' => $fields]);
+            throw new CreateException($message, $code, $e, ['fields' => $answers]);
         }
     }
 
+    /**
+     * Returns response by id
+     * @param  Appercode\Backend $backend
+     * @param  string  $id
+     * @return Appercode\Contracts\FormResponseContract
+     */
     public static function find(Backend $backend, string $id): FormResponseContract
     {
         return self::list($backend, [
@@ -123,7 +136,13 @@ class FormResponse implements FormResponseContract
         ])->first();
     }
 
-    public static function list(Backend $backend, $filter = null): Collection
+    /**
+     * Returns responses by query
+     * @param  Appercode\Backend $backend
+     * @param  array  $filter
+     * @return Illuminate\Support\Collection
+     */
+    public static function list(Backend $backend, array $filter = []): Collection
     {
         $method = self::methods($backend, 'list');
 
@@ -146,5 +165,32 @@ class FormResponse implements FormResponseContract
         return collect($json)->map(function ($fields) use ($backend) {
             return new FormResponse($fields, $backend);
         });
+    }
+
+    /**
+     * Returns responses count for provided filter
+     * @param  Appercode\Backend $backend
+     * @param  array  $filter
+     * @return int
+     */
+    public static function count(Backend $backend, $filter = []): int
+    {
+        $method = self::methods($backend, 'list');
+
+        try {
+            return self::countRequest([
+                'method' => $method['type'],
+                'json' => $filter ?? (object)[],
+                'headers' => [
+                    'X-Appercode-Session-Token' => $backend->token()
+                ],
+                'url' => $method['url'],
+            ]);
+        } catch (BadResponseException $e) {
+            $code = $e->hasResponse() ? $e->getResponse()->getStatusCode() : null;
+            $message = $e->hasResponse() ? $e->getResponse()->getBody() : '';
+
+            throw new ReceiveException($message, $code, $e, ['fields' => $filter]);
+        }
     }
 }
