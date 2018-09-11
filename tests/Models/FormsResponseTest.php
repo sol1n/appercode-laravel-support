@@ -101,37 +101,55 @@ class FormsResponseTest extends TestCase
         }
 
         FormResponse::create($answers, $form->id, $this->user->backend);
+        FormResponse::create($answers, $form->id, $this->user->backend);
+        FormResponse::create($answers, $form->id, $this->user->backend, true);
 
         $responses = FormResponse::list($this->user->backend, [
+            'where' => [
+                'formId' => $form->id,
+                'userId' => $this->user->id
+            ]
+        ]);
+
+        $this->assertEquals($responses->count(), 3);
+        
+        $responses = FormResponse::list($this->user->backend, [
+            'where' => [
+                'formId' => $form->id,
+                'userId' => $this->user->id,
+                'submittedAt' => [
+                    '$exists' => false
+                ]
+            ]
+        ]);
+
+        $this->assertEquals($responses->count(), 1);
+
+        $form->delete();
+    }
+
+    public function test_responses_can_be_counted()
+    {
+        $form = Form::create($this->formData(), $this->user->backend);
+
+        $questions = $form->questions();
+        $templates = $this->templateAnswers();
+
+        $answers = [];
+        foreach ($questions as $question) {
+            $answers[$question['id']] = $templates[$question['type']];
+        }
+
+        FormResponse::create($answers, $form->id, $this->user->backend);
+
+        $responsesCount = FormResponse::count($this->user->backend, [
             'where' => [
                 'formId' => $form->id
             ]
         ]);
 
-        $this->assertEquals($responses->count(), 1);
-        $this->assertEquals($responses->first()->formId, $form->id);
+        $this->assertEquals($responsesCount, 1);
 
         $form->delete();
     }
-
-    // public function test_responses_can_be_counted()
-    // {
-    //     $form = Form::create($this->formData(), $this->user->backend);
-
-    //     $questions = $form->questions();
-    //     $templates = $this->templateAnswers();
-
-    //     $answers = [];
-    //     foreach ($questions as $question) {
-    //         $answers[$question['id']] = $templates[$question['type']];
-    //     }
-
-    //     FormResponse::create($answers, $form->id, $this->user->backend);
-
-    //     $responsesCount = FormResponse::count($this->user->backend);
-
-    //     $this->assertEquals($responsesCount, 1);
-
-    //     $form->delete();
-    // }
 }

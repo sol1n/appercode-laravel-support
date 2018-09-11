@@ -57,6 +57,11 @@ class Form implements FormContract
                     'type' => 'POST',
                     'url' => $backend->server . $backend->project . '/v2/forms/query'
                 ];
+            case 'count':
+                return [
+                    'type' => 'POST',
+                    'url' => $backend->server . $backend->project . '/v2/forms/query?count=true'
+                ];
             case 'delete':
                 return [
                     'type' => 'DELETE',
@@ -116,14 +121,14 @@ class Form implements FormContract
         return new Form($json, $backend);
     }
 
-    public static function list(Backend $backend, $filter = null): Collection
+    public static function list(Backend $backend, $filter = []): Collection
     {
         $method = self::methods($backend, 'list');
 
         try {
             $json = self::jsonRequest([
                 'method' => $method['type'],
-                'json' => $filter ?? (object)[],
+                'json' => (object) $filter,
                 'headers' => [
                     'X-Appercode-Session-Token' => $backend->token()
                 ],
@@ -139,6 +144,27 @@ class Form implements FormContract
         return collect($json)->map(function ($fields) use ($backend) {
             return new Form($fields, $backend);
         });
+    }
+
+    public static function count(Backend $backend, $filter = []): int
+    {
+        $method = self::methods($backend, 'count');
+
+        try {
+            return self::countRequest([
+                'method' => $method['type'],
+                'json' => (object) $filter,
+                'headers' => [
+                    'X-Appercode-Session-Token' => $backend->token()
+                ],
+                'url' => $method['url'],
+            ]);
+        } catch (BadResponseException $e) {
+            $code = $e->hasResponse() ? $e->getResponse()->getStatusCode() : null;
+            $message = $e->hasResponse() ? $e->getResponse()->getBody() : '';
+
+            throw new ReceiveException($message, $code, $e, ['fields' => $filter]);
+        }
     }
 
     public function delete(): FormContract

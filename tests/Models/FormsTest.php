@@ -84,6 +84,21 @@ class FormsTest extends TestCase
         $form->delete();
     }
 
+    public function test_form_can_be_counted()
+    {
+        $form = Form::create($this->formData(), $this->user->backend);
+
+        $formsCount = Form::count($this->user->backend, [
+            'where' => [
+                'id' => $form->id
+            ]
+        ]);
+
+        $this->assertEquals($formsCount, 1);
+
+        $form->delete();
+    }
+
     public function test_form_creation_throws_correct_exception()
     {
         $this->expectException(CreateException::class);

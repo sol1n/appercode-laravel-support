@@ -36,10 +36,15 @@ class FormResponse implements FormResponseContract
     private static function methods(Backend $backend, string $name, array $data = []): array
     {
         switch ($name) {
-            case 'create':
+            case 'submit':
                 return [
                     'type' => 'POST',
                     'url' => $backend->server . $backend->project . '/v2/forms/' . $data['form'] . '/submit?submit=true'
+                ];
+            case 'create':
+                return [
+                    'type' => 'POST',
+                    'url' => $backend->server . $backend->project . '/v2/forms/' . $data['form'] . '/submit'
                 ];
             case 'startForm':
                 return [
@@ -50,6 +55,11 @@ class FormResponse implements FormResponseContract
                 return [
                     'type' => 'POST',
                     'url' => $backend->server . $backend->project . '/v2/forms/responses/query'
+                ];
+            case 'count':
+                return [
+                    'type' => 'POST',
+                    'url' => $backend->server . $backend->project . '/v2/forms/responses/query?count=true'
                 ];
 
             default:
@@ -83,9 +93,10 @@ class FormResponse implements FormResponseContract
      * @param  array   $answers  answer values keyed by control ids
      * @param  string  $formId
      * @param  Appercode\Backend $backend
+     * @param  bool    $partial  if true sends answers without submiting form
      * @return Appercode\Contracts\FormResponseContract
      */
-    public static function create(array $answers, string $formId, Backend $backend): FormResponseContract
+    public static function create(array $answers, string $formId, Backend $backend, $partial = false): FormResponseContract
     {
         try {
             $method = self::methods($backend, 'startForm', ['form' => $formId]);
@@ -98,7 +109,12 @@ class FormResponse implements FormResponseContract
                 'url' => $method['url'],
             ]);
 
-            $method = self::methods($backend, 'create', ['form' => $formId]);
+            $method = self::methods(
+                $backend,
+                $partial ? 'create' : 'submit',
+                ['form' => $formId]
+            );
+
             $id = (string) self::request([
                 'method' => $method['type'],
                 'json' => $answers,
@@ -112,7 +128,6 @@ class FormResponse implements FormResponseContract
             $id = str_replace('"', '', $id);
 
             return FormResponse::find($backend, $id);
-
         } catch (BadResponseException $e) {
             $code = $e->hasResponse() ? $e->getResponse()->getStatusCode() : null;
             $message = $e->hasResponse() ? $e->getResponse()->getBody() : '';
@@ -149,7 +164,7 @@ class FormResponse implements FormResponseContract
         try {
             $json = self::jsonRequest([
                 'method' => $method['type'],
-                'json' => $filter ?? (object)[],
+                'json' => (object) $filter,
                 'headers' => [
                     'X-Appercode-Session-Token' => $backend->token()
                 ],
@@ -175,12 +190,12 @@ class FormResponse implements FormResponseContract
      */
     public static function count(Backend $backend, $filter = []): int
     {
-        $method = self::methods($backend, 'list');
+        $method = self::methods($backend, 'count');
 
         try {
             return self::countRequest([
                 'method' => $method['type'],
-                'json' => $filter ?? (object)[],
+                'json' => (object) $filter,
                 'headers' => [
                     'X-Appercode-Session-Token' => $backend->token()
                 ],
