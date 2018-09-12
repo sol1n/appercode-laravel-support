@@ -152,4 +152,35 @@ class FormsResponseTest extends TestCase
 
         $form->delete();
     }
+
+    public function test_responses_can_be_deleted()
+    {
+        $form = Form::create($this->formData(), $this->user->backend);
+
+        $questions = $form->questions();
+        $templates = $this->templateAnswers();
+
+        $answers = [];
+        foreach ($questions as $question) {
+            $answers[$question['id']] = $templates[$question['type']];
+        }
+
+        $responses[] = FormResponse::create($answers, $form->id, $this->user->backend);
+        $responses[] = FormResponse::create($answers, $form->id, $this->user->backend);
+        $responses[] = FormResponse::create($answers, $form->id, $this->user->backend, true);
+
+        foreach ($responses as $response) {
+            $response->delete();
+        }
+
+        $responsesCount = FormResponse::count($this->user->backend, [
+            'where' => [
+                'formId' => $form->id
+            ]
+        ]);
+
+        $this->assertEquals($responsesCount, 0);
+
+        $form->delete();
+    }
 }

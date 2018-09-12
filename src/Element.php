@@ -372,7 +372,7 @@ class Element implements ElementContract
 
         $languagesFields = [];
         if (count($languages) && count($json)) {
-            $ids = collect($json)->map(function($item) {
+            $ids = collect($json)->map(function ($item) {
                 return $item['id'];
             });
 
@@ -392,7 +392,7 @@ class Element implements ElementContract
                         'X-Appercode-Language' => $language
                     ],
                     'url' => $method['url'],
-                ]))->mapWithKeys(function($item) {
+                ]))->mapWithKeys(function ($item) {
                     return [$item['id'] => $item];
                 });
             }

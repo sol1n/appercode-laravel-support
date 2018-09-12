@@ -8,6 +8,7 @@ use Appercode\Contracts\FormResponse as FormResponseContract;
 
 use Appercode\Exceptions\FormResponse\CreateException;
 use Appercode\Exceptions\FormResponse\ReceiveException;
+use Appercode\Exceptions\FormResponse\DeleteException;
 
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
@@ -60,6 +61,11 @@ class FormResponse implements FormResponseContract
                 return [
                     'type' => 'POST',
                     'url' => $backend->server . $backend->project . '/v2/forms/responses/query?count=true'
+                ];
+            case 'delete':
+                return [
+                    'type' => 'DELETE',
+                    'url' => $backend->server . $backend->project . '/v2/forms/responses/' . $data['id']
                 ];
 
             default:
@@ -207,5 +213,28 @@ class FormResponse implements FormResponseContract
 
             throw new ReceiveException($message, $code, $e, ['fields' => $filter]);
         }
+    }
+
+    public function delete(): FormResponseContract
+    {
+        $method = self::methods($this->backend, 'delete', ['id' => $this->id]);
+
+        try {
+            self::request([
+                'method' => $method['type'],
+                'json' => (object) [],
+                'headers' => [
+                    'X-Appercode-Session-Token' => $this->backend->token()
+                ],
+                'url' => $method['url'],
+            ]);
+        } catch (BadResponseException $e) {
+            $code = $e->hasResponse() ? $e->getResponse()->getStatusCode() : null;
+            $message = $e->hasResponse() ? $e->getResponse()->getBody() : '';
+
+            throw new DeleteException($message, $code, $e);
+        }
+
+        return $this;
     }
 }
