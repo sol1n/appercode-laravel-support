@@ -65,7 +65,13 @@ class FormsResponseTest extends TestCase
             'floatInput' => 2.55,
             'numberInput' => 5,
             'multilineTextBox' => 'text Answer',
-            'textBox' => 'text Answer'
+            'textBox' => 'text Answer',
+            'checkBox' => 1,
+            'checkBoxList' => [1],
+            'radioButtons' => 1,
+            'comboBox' => 1,
+            'imagesCheckBoxList' => [1],
+            'ratingInput' => 1,
         ];
     }
 
@@ -182,5 +188,32 @@ class FormsResponseTest extends TestCase
         $this->assertEquals($responsesCount, 0);
 
         $form->delete();
+    }
+
+    public function not_test_response_calculate_correct_answers()
+    {
+        $questionTypes = ['checkBox', 'checkBoxList', 'radioButtons', 'comboBox', 'imagesCheckBoxList'];
+
+        foreach ($questionTypes as $questionType) {
+            $formData = $this->formData();
+            $formData['parts'] = [
+                FormCreator::part('somePart', [$questionType]),
+            ];
+
+            $form = Form::create($formData, $this->user->backend);
+            $questions = $form->questions();
+
+            $answers = [];
+            $templates = $this->templateAnswers();
+            foreach ($questions as $question) {
+                $answers[$question['id']] = $templates[$question['type']];
+            }
+
+            $response = FormResponse::create($answers, $form->id, $this->user->backend);
+
+            $this->assertEquals($response->correctCount, 1);
+
+            $form->delete();
+        }
     }
 }

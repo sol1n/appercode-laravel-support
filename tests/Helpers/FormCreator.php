@@ -70,7 +70,12 @@ class FormCreator
                         "en" => "Option 1 title en"
                     ],
                     "value" => 0,
-                    "class" => "Option 1 class"
+                    "class" => "Option 1 class",
+                    "displayCondition" => [
+                        "someId" => [
+                            '$in' => [1,2,3]
+                        ]
+                    ]
                 ],
                 [
                     "title" => [
@@ -84,9 +89,22 @@ class FormCreator
                             '$in' => [1,2,3]
                         ]
                     ]
+                ],
+                [
+                    "title" => [
+                        "ru" => "Option 2 title",
+                        "en" => "Option 2 title en"
+                    ],
+                    "value" => 2,
+                    "class" => "Option 2 class",
+                    "displayCondition" => [
+                        "someId" => [
+                            '$in' => [1,2,3]
+                        ]
+                    ]
                 ]
             ],
-            "class" => "$code textBox control class",
+            "class" => "$code listControl control class",
             "id" => "id" . rand(1000, 9999),
             "displayCondition" => [
                 "someId" => [
@@ -110,7 +128,7 @@ class FormCreator
             "viewData" => [
                 "key" => "value"
             ],
-            "correctValues" => null
+            "correctValues" => [1]
         ];
     }
 
@@ -128,8 +146,8 @@ class FormCreator
             case 'checkBoxList':
             case 'radioButtons':
             case 'comboBox':
-            case 'ImagesCheckBoxList':
-            case 'RatingInput':
+            case 'imagesCheckBoxList':
+            case 'ratingInput':
                 return self::listControl($code, $type);
             default:
                 return (object)[];

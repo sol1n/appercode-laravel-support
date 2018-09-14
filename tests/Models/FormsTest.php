@@ -84,6 +84,8 @@ class FormsTest extends TestCase
         $form->delete();
     }
 
+
+
     public function test_form_can_be_counted()
     {
         $form = Form::create($this->formData(), $this->user->backend);
@@ -198,5 +200,68 @@ class FormsTest extends TestCase
 
         $this->assertEquals($formList->count(), 1);
         $this->assertEquals($formList->first()->id, $form->id);
+    }
+
+    public function test_forms_can_be_sorted_by_dates()
+    {
+        $formData = $this->formData();
+        
+        $formData['openAt'] = (new Carbon)->setTimezone('Europe/Moscow')->toAtomString();
+        $formData['closeAt'] = (new Carbon)->setTimezone('Europe/Moscow')->toAtomString();
+        $first = Form::create($formData, $this->user->backend);
+
+        $formData['openAt'] = (new Carbon)->addDay()->setTimezone('Europe/Moscow')->toAtomString();
+        $formData['closeAt'] = (new Carbon)->addDay()->setTimezone('Europe/Moscow')->toAtomString();
+        $last = Form::create($formData, $this->user->backend);
+
+        $ids = [$first->id, $last->id];
+        $filter = [
+            'where' => [
+                'id' => [
+                    '$in' => $ids
+                ]
+            ]
+        ];
+
+        $filter['order']['openAt'] = 'asc';
+        $formsList = Form::list($this->user->backend, $filter);
+        $this->assertEquals($formsList->first()->id, $first->id);
+
+        $filter['order']['openAt'] = 'desc';
+        $formsList = Form::list($this->user->backend, $filter);
+        $this->assertEquals($formsList->first()->id, $last->id);
+
+        $filter['order'] = ['closeAt' => 'asc'];
+        $formsList = Form::list($this->user->backend, $filter);
+        $this->assertEquals($formsList->first()->id, $first->id);
+
+        $filter['order']['closeAt'] = 'desc';
+        $formsList = Form::list($this->user->backend, $filter);
+        $this->assertEquals($formsList->first()->id, $last->id);
+    }
+
+    public function test_forms_can_be_created_with_option_controls()
+    {
+        $formData = $this->formData();
+        $formData['parts'] = [
+            FormCreator::part('somePart', ['checkBox', 'checkBoxList', 'radioButtons', 'comboBox']),
+            FormCreator::part('someAnotherPart', ['imagesCheckBoxList', 'ratingInput'])
+        ];
+
+        $form = Form::create($formData, $this->user->backend);
+
+        foreach ($form->parts as $partIndex => $part) {
+            $sourcePart = $formData['parts'][$partIndex];
+            $this->assertEquals(count($sourcePart['sections'][0]['groups'][0]['controls']), count($part['sections'][0]['groups'][0]['controls']));
+
+            foreach ($part['sections'][0]['groups'][0]['controls'] as $controlIndex => $control) {
+                $sourceControl = $sourcePart['sections'][0]['groups'][0]['controls'][$controlIndex];
+
+                $this->assertEquals($control['options']['$type'], 'Option2[]');
+                $this->assertEquals($control['options']['value'], $sourceControl['options']);
+            }
+        }
+
+        $form->delete();
     }
 }
