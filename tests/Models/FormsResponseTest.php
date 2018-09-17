@@ -216,4 +216,32 @@ class FormsResponseTest extends TestCase
             $form->delete();
         }
     }
+
+    public function test_response_can_compile_member_answer_with_correctness()
+    {
+        $formData = $this->formData();
+        $formData['parts'] = [
+            FormCreator::part('somePart', ['textBox', 'multilineTextBox', 'numberInput', 'floatInput', 'dateTimePicker']),
+            FormCreator::part('somePart', ['checkBox', 'checkBoxList', 'radioButtons', 'comboBox', 'imagesCheckBoxList']),
+        ];
+
+        $form = Form::create($formData, $this->user->backend);
+        $questions = $form->questions();
+
+        $answers = [];
+        $templates = $this->templateAnswers();
+        foreach ($questions as $question) {
+            $answers[$question['id']] = $templates[$question['type']];
+        }
+
+        $response = FormResponse::create($answers, $form->id, $this->user->backend);
+
+        $memberAnswers = $response->memberAnswers();
+
+        foreach ($answers as $controlId => $answer) {
+            $this->assertEquals($answer, $memberAnswers['answers'][$controlId]['value']);
+        }
+
+        $form->delete();
+    }
 }

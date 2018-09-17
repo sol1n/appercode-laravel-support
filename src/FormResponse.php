@@ -6,6 +6,8 @@ use Appercode\Traits\AppercodeRequest;
 
 use Appercode\Contracts\FormResponse as FormResponseContract;
 
+use Appercode\Form;
+
 use Appercode\Exceptions\FormResponse\CreateException;
 use Appercode\Exceptions\FormResponse\ReceiveException;
 use Appercode\Exceptions\FormResponse\DeleteException;
@@ -236,5 +238,85 @@ class FormResponse implements FormResponseContract
         }
 
         return $this;
+    }
+
+    public function memberAnswers(): array
+    {
+        $result = [];
+
+        $form = Form::list($this->backend, [
+            'where' => [
+                'id' => $this->formId
+            ]
+        ])->first();
+
+        $questions = [];
+        foreach ($form->questions() as $question) {
+            $options = [];
+            if (isset($question['options']['value']) && is_array($question['options']['value'])) {
+                foreach ($question['options']['value'] as $option) {
+                    $options[$option['value']] = [
+                        'value' => $option['value'],
+                        'title' => $option['title'],
+                        'isCorrect' => isset($question['correctValues']) && is_array($question['correctValues']) && in_array($option['value'], $question['correctValues'])
+                    ];
+                }
+            }
+
+            $questions[$question['id']] = [
+                'id' => $question['id'],
+                'title' => $question['title'],
+                'description' => $question['description'],
+                'type' => $question['type'],
+                'options' => count($options) ? $options : null
+            ];
+        }
+
+        $answers = [];
+
+        if (isset($this->response) && is_array($this->response)) {
+            foreach ($this->response as $index => $response) {
+                if (!is_null($response)) {
+                    $question = $questions[$index];
+                    switch ($question['type']) {
+                        case 'checkBox':
+                        case 'checkBoxList':
+                        case 'radioButtons':
+                        case 'comboBox':
+                        case 'imagesCheckBoxList':
+                            if (is_array($response)) {
+                                $options = [];
+                                foreach ($response as $option) {
+                                    $options[] = $question['options'][$option]['title'] ?? $option;
+                                }
+                                $displayValue = $options;
+                            } else {
+                                $displayValue = $question['options'][$response]['title'] ?? $response;
+                            }
+                            break;
+                        case 'dateTimePicker':
+                            $displayValue = (new Carbon($response))->format('d-m-Y');
+                            break;
+                        
+                        default:
+                            $displayValue = $response;
+                            break;
+                    }
+
+                    $answers[$index] = [
+                        'value' => $response,
+                        'displayValue' => $displayValue
+                    ];
+                } else {
+                    $answers[$index] = null;
+                }
+            }
+        }
+
+        return [
+            'form' => $form,
+            'questions' => $questions,
+            'answers' => $answers
+        ];
     }
 }
