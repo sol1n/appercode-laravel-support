@@ -150,6 +150,7 @@ class ElementsTest extends TestCase
             $element = Element::create($schema->id, $elementFields, $this->user->backend);
 
             $elementFields['isPublished'] = true;
+            $elementFields['updatedBy'] = $this->user->id;
 
             foreach ($element->fields as $fieldName => $fieldValue) {
                 $this->assertEquals($fieldValue, $elementFields[$fieldName]);
