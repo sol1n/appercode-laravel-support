@@ -9,6 +9,7 @@ use Appercode\Contracts\NotificationCompany as NotificationCompanyContract;
 use Appercode\Exceptions\NotificationCompany\CreateException;
 use Appercode\Exceptions\NotificationCompany\ReceiveException;
 use Appercode\Exceptions\NotificationCompany\DeleteException;
+use Appercode\Exceptions\NotificationCompany\SendException;
 
 use Appercode\Backend;
 
@@ -51,10 +52,20 @@ class NotificationCompany implements NotificationCompanyContract
                     'type' => 'GET',
                     'url' => $backend->server . $backend->project . '/notifications/campaigns'
                 ];
+            case 'count':
+                return [
+                    'type' => 'GET',
+                    'url' => $backend->server . $backend->project . '/notifications/campaigns?' . http_build_query($data)
+                ];
             case 'find':
                 return [
                     'type' => 'GET',
                     'url' => $backend->server . $backend->project . '/notifications/campaigns/' . $data['id']
+                ];
+            case 'send':
+                return [
+                    'type' => 'POST',
+                    'url' => $backend->server . $backend->project . '/notifications/campaigns/' . $data['id'] . '/send'
                 ];
             case 'delete':
                 return [
@@ -159,6 +170,30 @@ class NotificationCompany implements NotificationCompanyContract
         return new self($json, $backend);
     }
 
+    public static function count(Backend $backend, array $fields = []): int
+    {
+        $params = [
+            'count' => 'true',
+            'take' => 0,
+            'where' => isset($fields['where']) && count($fields['where'])
+                ? json_encode($fields['where'])
+                : json_encode((object) []),
+            'skip' => $fields['skip'] ?? 0,
+            'order' => $fields['skip'] ?? '-createdAt',
+            'include' => $fields['include'] ?? []
+        ];
+
+        $method = self::methods($backend, 'count', $params);
+
+        return self::countRequest([
+            'method' => $method['type'],
+            'headers' => [
+                'X-Appercode-Session-Token' => $backend->token()
+            ],
+            'url' => $method['url'],
+        ]);
+    }
+
     public static function sendStatic(Backend $backend, array $ids): void
     {
     }
@@ -172,6 +207,24 @@ class NotificationCompany implements NotificationCompanyContract
 
     public function send(): NotificationCompanyContract
     {
+        $method = self::methods($this->backend, 'send', ['id' => $this->id]);
+
+        try {
+            self::request([
+                'method' => $method['type'],
+                'headers' => [
+                    'X-Appercode-Session-Token' => $this->backend->token()
+                ],
+                'url' => $method['url'],
+            ]);
+        } catch (BadResponseException $e) {
+            $code = $e->hasResponse() ? $e->getResponse()->getStatusCode() : null;
+            $message = $e->hasResponse() ? $e->getResponse()->getBody() : '';
+
+            throw new SendException($message, $code, $e, ['id' => $this->id]);
+        }
+
+        return $this;
     }
 
     public function delete(): NotificationCompanyContract

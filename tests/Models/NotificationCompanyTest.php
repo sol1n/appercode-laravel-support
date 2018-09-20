@@ -68,4 +68,28 @@ class NotificationCompanyTest extends TestCase
 
         $this->assertEquals($company->isDeleted, true);
     }
+
+    public function test_company_can_be_counted()
+    {
+        $company = NotificationCompany::create($this->user->backend, $this->companyData());
+        $count = NotificationCompany::count($this->user->backend, [
+            'where' => [
+                'id' => $company->id
+            ]
+        ]);
+        
+        $this->assertEquals($count, 1);
+
+        $company->delete();
+    }
+
+    public function test_company_can_be_sended()
+    {
+        $company = NotificationCompany::create($this->user->backend, $this->companyData())->send();
+        $company = NotificationCompany::find($this->user->backend, $company->id);
+
+        $this->assertNotNull($company->sentAt);
+
+        $company->delete();
+    }
 }
