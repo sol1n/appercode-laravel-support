@@ -195,6 +195,16 @@ class Form implements FormContract
         foreach ($this->parts as $part) {
             foreach ($part['sections'] as $section) {
                 foreach ($section['groups'] as $group) {
+                    if (count($group['controls']) == 2) {
+                        $ownVariantIndex = collect($group['controls'])->search(function ($control) {
+                            return $control['type'] == 'textBox';
+                        });
+                        if ($ownVariantIndex !== false) {
+                            $ownVariant = $group['controls'][$ownVariantIndex];
+                            unset($group['controls'][$ownVariantIndex]);
+                            $group['controls'][array_keys($group['controls'])[0]]['ownVariantId'] = $ownVariant['id'] ?? null;
+                        }
+                    }
                     $result = array_merge($result, $group['controls']);
                 }
             }

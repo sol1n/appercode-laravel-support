@@ -106,7 +106,7 @@ class FormReport implements FormReportContract
         return new self($backend, $json);
     }
 
-    public function results()
+    public function results(): array
     {
         $method = self::methods($this->backend, 'results', ['id' => $this->id]);
 
@@ -124,5 +124,80 @@ class FormReport implements FormReportContract
 
             throw new ReceiveException($message, $code, $e, ['id' => $this->id]);
         }
+    }
+
+    public function compiledResults(): array
+    {
+        $results = [];
+        $data = $this->results();
+        $form = Form::list($this->backend, [
+            'where' => [
+                'id' => $this->formId
+            ]
+        ])->first();
+
+        $questions = $form->questions();
+
+        foreach ($data as $controlStatistics) {
+            $variants = [];
+            $controlId = $controlStatistics['controlId'];
+            $question = $questions[$controlId];
+
+            foreach ($controlStatistics['values'] as $option) {
+                if (is_array($option['value'])) {
+                    $option['value'] = array_unique($option['value']);
+                    foreach ($option['value'] as $optionValue) {
+                        if (isset($variants[$optionValue])) {
+                            $variants[$optionValue]['count'] += $option['count'];
+                            if (isset($option['responses']) && is_array($option['responses'])) {
+                                $variants[$optionValue]['responses'] = array_merge($variants[$optionValue]['responses'], $option['responses']);
+                            }
+                        } else {
+                            $variants[$optionValue]['count'] = $option['count'];
+                            if (isset($option['responses']) && is_array($option['responses'])) {
+                                $variants[$optionValue]['responses'] = $option['responses'];
+                            } else {
+                                $variants[$optionValue]['responses'] = [];
+                            }
+                            $variants[$optionValue]['isCorrect'] = in_array($optionValue, $question['correctValues']);
+                        }
+                    }
+                } else {
+                    $optionValue = $option['value'];
+                    $variants[$optionValue]['count'] = $option['count'];
+                    if (isset($option['responses']) && is_array($option['responses'])) {
+                        $variants[$optionValue]['responses'] = $option['responses'];
+                    } else {
+                        $variants[$optionValue]['responses'] = [];
+                    }
+                    $variants[$optionValue]['isCorrect'] = in_array($optionValue, $question['correctValues']);
+                }
+
+                foreach ($variants as $optionValue => $optionData) {
+                    if ($controlStatistics['count']) {
+                        $variants[$optionValue]['popularity'] = round($optionData['count'] / $controlStatistics['count'], 3);
+                    } else {
+                        $variants[$optionValue]['popularity'] = 0;
+                    }
+                }
+            }
+            
+            ksort($variants);
+
+            $results['statistics'][$controlId] = [
+                'id' => $controlId,
+                'type' => $question['type'],
+                'title' => $question['title'],
+                'description' => $question['description'],
+                'viewData' => $question['viewData'],
+                'options' => $variants,
+                'count' => $controlStatistics['count'],
+                'correctValues' => $question['correctValues']
+            ];
+        }
+
+        $results['form'] = $form;
+
+        return $results;
     }
 }

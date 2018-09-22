@@ -58,8 +58,9 @@ class FormsReportTest extends TestCase
         ];
     }
 
-    public function not_a_test_report_can_be_created()
+    public function test_report_can_be_created()
     {
+        $questionsCount = 15;
         $formData = $this->formData();
         $formData['parts'] = [
             FormCreator::part('somePart', ['checkBoxList', 'radioButtons', 'comboBox', 'imagesCheckBoxList']),
@@ -69,11 +70,11 @@ class FormsReportTest extends TestCase
         $questions = $form->questions();
         $responses = [];
 
-        for ($i = 0; $i < 5; $i++) {
+        for ($i = 0; $i < $questionsCount; $i++) {
             $answers = [];
             foreach ($questions as $question) {
                 $answers[$question['id']] = in_array($question['type'], ['checkBoxList', 'imagesCheckBoxList'])
-                    ? [rand(0, 2)]
+                    ? [rand(0, 2), rand(0, 2)]
                     : rand(0, 2);
             }
 
@@ -86,7 +87,12 @@ class FormsReportTest extends TestCase
 
         $report = FormReport::create($this->user->backend, $form->id, $controlsIds);
 
-        $results = $report->results();
+        $results = $report->compiledResults();
+
+        $this->assertEquals($results->form, $form);
+        foreach ($results['statistics'] as $controlStatistics) {
+            $this->assertEquals($controlStatistics['count'], $questionsCount);
+        }
 
         $form->delete();
     }
