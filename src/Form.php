@@ -11,7 +11,9 @@ use Appercode\Exceptions\Form\DeleteException;
 use Appercode\Exceptions\Form\ReceiveException;
 
 use Appercode\Backend;
-use Appercode\Services\FormManager;
+use Appercode\FormReport;
+use Appercode\FormResponse;
+use Appercode\Services\FormReportsManager;
 
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
@@ -97,7 +99,7 @@ class Form implements FormContract
         $this->closeAt = new Carbon($data['closeAt']) ?? null;
 
         $this->backend = $backend;
-        $this->manager = new FormManager($this, $backend);
+        $this->reportsManager = new FormReportsManager($this, $backend);
 
         return $this;
     }
@@ -222,5 +224,17 @@ class Form implements FormContract
         return $this->controls()->mapWithKeys(function ($item) {
             return [$item['id'] => $item];
         });
+    }
+
+    public function reports(array $filter = []): Collection
+    {
+        $filter['where']['formId'] = $this->id;
+        return FormReport::list($this->backend, $filter);
+    }
+
+    public function responses(array $filter = []): Collection
+    {
+        $filter['where']['formId'] = $this->id;
+        return FormResponse::list($this->backend, $filter);
     }
 }

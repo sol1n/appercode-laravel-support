@@ -240,6 +240,15 @@ class FormResponse implements FormResponseContract
         return $this;
     }
 
+    public function form()
+    {
+        return Form::list($this->backend, [
+            'where' => [
+                'id' => $this->formId
+            ]
+        ])->first();
+    }
+
     public function memberAnswers(): array
     {
         $result = [];

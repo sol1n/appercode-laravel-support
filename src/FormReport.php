@@ -153,6 +153,15 @@ class FormReport implements FormReportContract
         }
     }
 
+    public function form()
+    {
+        return Form::list($this->backend, [
+            'where' => [
+                'id' => $this->formId
+            ]
+        ])->first();
+    }
+
     public function compiledResults(): array
     {
         $results = [];

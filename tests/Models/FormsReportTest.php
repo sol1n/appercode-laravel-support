@@ -134,7 +134,7 @@ class FormsReportTest extends TestCase
 
         $form = Form::create($formData, $this->user->backend);
 
-        $report = $form->manager->recreateVariantsReport();
+        $report = $form->reportsManager->recreateVariantsReport();
 
         $this->assertEquals(count($report->perspectives), 6);
 

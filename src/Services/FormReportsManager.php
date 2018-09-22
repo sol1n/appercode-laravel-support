@@ -9,7 +9,7 @@ use Appercode\FormReport;
 use Appercode\Contracts\Form as FormContract;
 use Appercode\Contracts\FormReport as FormReportContract;
 
-class FormManager
+class FormReportsManager
 {
     protected $backend;
 
@@ -34,11 +34,7 @@ class FormManager
 
     public function recreateVariantsReport()
     {
-        FormReport::list($this->backend, [
-            'where' => [
-                'formId' => $this->form->id
-            ]
-        ])->each(function ($report) {
+        $this->form->reports()->each(function ($report) {
             $report->delete();
         });
 
