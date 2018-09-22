@@ -11,6 +11,7 @@ use Appercode\Exceptions\Form\DeleteException;
 use Appercode\Exceptions\Form\ReceiveException;
 
 use Appercode\Backend;
+use Appercode\Services\FormManager;
 
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
@@ -21,6 +22,8 @@ class Form implements FormContract
     use AppercodeRequest;
 
     private $backend;
+
+    public $manager;
 
     public $id;
     public $title;
@@ -94,6 +97,7 @@ class Form implements FormContract
         $this->closeAt = new Carbon($data['closeAt']) ?? null;
 
         $this->backend = $backend;
+        $this->manager = new FormManager($this, $backend);
 
         return $this;
     }

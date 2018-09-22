@@ -42,6 +42,11 @@ class FormReport implements FormReportContract
                     'type' => 'POST',
                     'url' => $backend->server . $backend->project . '/v2/forms/reports'
                 ];
+            case 'list':
+                return [
+                    'type' => 'POST',
+                    'url' => $backend->server . $backend->project . '/v2/forms/reports/query'
+                ];
             case 'results':
                 return [
                     'type' => 'GET',
@@ -104,6 +109,28 @@ class FormReport implements FormReportContract
         }
 
         return new self($backend, $json);
+    }
+
+    public static function list(Backend $backend, array $filter = []): Collection
+    {
+        $method = self::methods($backend, 'list');
+        try {
+            return collect(self::jsonRequest([
+                'method' => $method['type'],
+                'json' => (object) $filter,
+                'headers' => [
+                    'X-Appercode-Session-Token' => $backend->token()
+                ],
+                'url' => $method['url'],
+            ]))->map(function ($item) use ($backend) {
+                return new self($backend, $item);
+            });
+        } catch (BadResponseException $e) {
+            $code = $e->hasResponse() ? $e->getResponse()->getStatusCode() : null;
+            $message = $e->hasResponse() ? $e->getResponse()->getBody() : '';
+
+            throw new ReceiveException($message, $code, $e, ['filter' => $filter]);
+        }
     }
 
     public function results(): array

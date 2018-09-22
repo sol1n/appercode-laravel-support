@@ -10,6 +10,7 @@ use Appercode\Form;
 use Appercode\Backend;
 use Appercode\FormReport;
 use Appercode\FormResponse;
+use Appercode\Services\FormManager;
 
 use Appercode\Enums\Form\Types as FormTypes;
 
@@ -89,10 +90,53 @@ class FormsReportTest extends TestCase
 
         $results = $report->compiledResults();
 
-        $this->assertEquals($results->form, $form);
+        $this->assertEquals($results['form'], $form);
         foreach ($results['statistics'] as $controlStatistics) {
             $this->assertEquals($controlStatistics['count'], $questionsCount);
         }
+
+        $form->delete();
+    }
+
+    public function test_report_can_be_listed()
+    {
+        $formData = $this->formData();
+        $formData['parts'] = [
+            FormCreator::part('somePart', ['checkBoxList', 'radioButtons', 'comboBox', 'imagesCheckBoxList']),
+        ];
+
+        $form = Form::create($formData, $this->user->backend);
+        
+        $controlsIds = $form->questions()->map(function ($item) {
+            return $item['id'];
+        })->values()->toArray();
+
+        $createdReport = FormReport::create($this->user->backend, $form->id, $controlsIds);
+
+        $reports = FormReport::list($this->user->backend, [
+            'where' => [
+                'formId' => $form->id
+            ]
+        ]);
+
+        $this->assertEquals($createdReport->id, $reports->first()->id);
+
+        $form->delete();
+    }
+
+    public function test_form_can_create_report()
+    {
+        $formData = $this->formData();
+        $formData['parts'] = [
+            FormCreator::part('somePart', ['textBox', 'radioButtons', 'comboBox', 'imagesCheckBoxList']),
+            FormCreator::part('someAnotherPart', ['checkBoxList', 'radioButtons', 'floatInput', 'imagesCheckBoxList']),
+        ];
+
+        $form = Form::create($formData, $this->user->backend);
+
+        $report = $form->manager->recreateVariantsReport();
+
+        $this->assertEquals(count($report->perspectives), 6);
 
         $form->delete();
     }
