@@ -58,7 +58,7 @@ class FormsReportTest extends TestCase
         ];
     }
 
-    public function test_report_can_be_created()
+    public function not_a_test_report_can_be_created()
     {
         $formData = $this->formData();
         $formData['parts'] = [

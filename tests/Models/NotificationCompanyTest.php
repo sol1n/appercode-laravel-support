@@ -92,4 +92,56 @@ class NotificationCompanyTest extends TestCase
 
         $company->delete();
     }
+
+    public function test_company_can_be_deleted_via_static_method()
+    {
+        $company = NotificationCompany::create($this->user->backend, $this->companyData());
+
+        NotificationCompany::deleteStatic($this->user->backend, [$company->id]);
+
+        $company = NotificationCompany::find($this->user->backend, $company->id);
+
+        $this->assertEquals($company->isDeleted, true);
+    }
+
+    public function test_company_can_be_sended_via_static_method()
+    {
+        $company = NotificationCompany::create($this->user->backend, $this->companyData());
+        NotificationCompany::sendStatic($this->user->backend, [$company->id]);
+        $company = NotificationCompany::find($this->user->backend, $company->id);
+
+        $this->assertNotNull($company->sentAt);
+
+        $company->delete();
+    }
+
+    public function test_company_can_be_updated_via_static_method()
+    {
+        $company = NotificationCompany::create($this->user->backend, $this->companyData());
+
+        NotificationCompany::update($this->user->backend, [
+            'deepLink' => 'new deepLink value'
+        ], $company->id);
+
+        $company = NotificationCompany::find($this->user->backend, $company->id);
+
+        $this->assertEquals($company->deepLink, 'new deepLink value');
+
+        $company->delete();
+    }
+
+    public function not_a_test_company_can_be_updated_via_instance_method()
+    {
+        $company = NotificationCompany::create($this->user->backend, $this->companyData());
+        $company->deepLink = 'new deepLink value';
+        $company->save();
+
+        $this->assertEquals($company->deepLink, 'new deepLink value');
+
+        $company = NotificationCompany::find($this->user->backend, $company->id);
+
+        $this->assertEquals($company->deepLink, 'new deepLink value');
+
+        $company->delete();
+    }
 }

@@ -8,6 +8,7 @@ use Appercode\Contracts\NotificationCompany as NotificationCompanyContract;
 
 use Appercode\Exceptions\NotificationCompany\CreateException;
 use Appercode\Exceptions\NotificationCompany\ReceiveException;
+use Appercode\Exceptions\NotificationCompany\SaveException;
 use Appercode\Exceptions\NotificationCompany\DeleteException;
 use Appercode\Exceptions\NotificationCompany\SendException;
 
@@ -52,6 +53,11 @@ class NotificationCompany implements NotificationCompanyContract
                     'type' => 'GET',
                     'url' => $backend->server . $backend->project . '/notifications/campaigns'
                 ];
+            case 'save':
+                return [
+                    'type' => 'PUT',
+                    'url' => $backend->server . $backend->project . '/notifications/campaigns/' . $data['id']
+                ];
             case 'count':
                 return [
                     'type' => 'GET',
@@ -76,6 +82,32 @@ class NotificationCompany implements NotificationCompanyContract
             default:
                 throw new \Exception('Can`t find method ' . $name);
         }
+    }
+
+    protected function toJson()
+    {
+        return [
+            'id' => $this->id,
+            'isPublished' => is_null($this->isPublished)
+                ? null
+                : (bool) $this->isPublished,
+            'sentAt' => is_null($this->sentAt)
+               ? null
+               : $this->isPublished->setTimezone('Europe/Moscow')->toAtomString(),
+            'title' => $this->title,
+            'body' => $this->body,
+            'deepLink' => $this->deepLink,
+            'to' => $this->to,
+            'scheduledAt' => is_null($this->scheduledAt)
+                ? null
+                : $this->scheduledAt->setTimezone('Europe/Moscow')->toAtomString(),
+            'withPushNotification' => $this->withPushNotification,
+            'withBadgeNotification' => $this->withBadgeNotification,
+            //'installationFilter' => $this->installationFilter,
+            'updatedAt' => is_null($this->updatedAt)
+                ? null
+                : $this->updatedAt->setTimezone('Europe/Moscow')->toAtomString(),
+        ];
     }
 
     public function __construct(array $data, Backend $backend)
@@ -138,12 +170,29 @@ class NotificationCompany implements NotificationCompanyContract
 
             throw new CreateException($message, $code, $e, ['fields' => $fields]);
         }
-
+        
         return new self($json, $backend);
     }
 
     public static function update(Backend $backend, array $fields, string $id): void
     {
+        $method = self::methods($backend, 'save', ['id' => $id]);
+
+        try {
+            self::jsonRequest([
+                'method' => $method['type'],
+                'json' => $fields,
+                'headers' => [
+                    'X-Appercode-Session-Token' => $backend->token()
+                ],
+                'url' => $method['url'],
+            ]);
+        } catch (BadResponseException $e) {
+            $code = $e->hasResponse() ? $e->getResponse()->getStatusCode() : null;
+            $message = $e->hasResponse() ? $e->getResponse()->getBody() : '';
+
+            throw new SaveException($message, $code, $e, ['fields' => $fields, 'id' => $id]);
+        }
     }
 
     public static function find(Backend $backend, string $id): NotificationCompanyContract
@@ -196,13 +245,69 @@ class NotificationCompany implements NotificationCompanyContract
 
     public static function sendStatic(Backend $backend, array $ids): void
     {
+        foreach ($ids as $id) {
+            $method = self::methods($backend, 'send', ['id' => $id]);
+
+            try {
+                self::request([
+                    'method' => $method['type'],
+                    'headers' => [
+                        'X-Appercode-Session-Token' => $backend->token()
+                    ],
+                    'url' => $method['url'],
+                ]);
+            } catch (BadResponseException $e) {
+                $code = $e->hasResponse() ? $e->getResponse()->getStatusCode() : null;
+                $message = $e->hasResponse() ? $e->getResponse()->getBody() : '';
+
+                throw new SendException($message, $code, $e, ['id' => $id]);
+            }
+        }
     }
+
     public static function deleteStatic(Backend $backend, array $ids): void
     {
+        foreach ($ids as $id) {
+            $method = self::methods($backend, 'delete', ['id' => $id]);
+
+            try {
+                self::request([
+                    'method' => $method['type'],
+                    'headers' => [
+                        'X-Appercode-Session-Token' => $backend->token()
+                    ],
+                    'url' => $method['url'],
+                ]);
+            } catch (BadResponseException $e) {
+                $code = $e->hasResponse() ? $e->getResponse()->getStatusCode() : null;
+                $message = $e->hasResponse() ? $e->getResponse()->getBody() : '';
+
+                throw new DeleteException($message, $code, $e, ['id' => $id]);
+            }
+        }
     }
 
     public function save(): NotificationCompanyContract
     {
+        $method = self::methods($this->backend, 'save', ['id' => $this->id]);
+
+        try {
+            $json = self::jsonRequest([
+                'method' => $method['type'],
+                'json' => $this->toJson(),
+                'headers' => [
+                    'X-Appercode-Session-Token' => $this->backend->token()
+                ],
+                'url' => $method['url'],
+            ]);
+
+            return new self($json, $this->backend);
+        } catch (BadResponseException $e) {
+            $code = $e->hasResponse() ? $e->getResponse()->getStatusCode() : null;
+            $message = $e->hasResponse() ? $e->getResponse()->getBody() : '';
+
+            throw new SaveException($message, $code, $e, ['fields' => $this->toJson()]);
+        }
     }
 
     public function send(): NotificationCompanyContract
