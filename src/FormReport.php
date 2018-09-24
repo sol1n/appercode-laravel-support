@@ -10,6 +10,7 @@ use Appercode\Form;
 
 use Appercode\Exceptions\FormReport\CreateException;
 use Appercode\Exceptions\FormReport\ReceiveException;
+use Appercode\Exceptions\FormReport\DeleteException;
 
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
@@ -51,6 +52,11 @@ class FormReport implements FormReportContract
                 return [
                     'type' => 'GET',
                     'url' => $backend->server . $backend->project . '/v2/forms/reports/' . $data['id'] . '/result'
+                ];
+            case 'delete':
+                return [
+                    'type' => 'DELETE',
+                    'url' => $backend->server . $backend->project . '/v2/forms/reports/' . $data['id']
                 ];
 
             default:
@@ -235,5 +241,25 @@ class FormReport implements FormReportContract
         $results['form'] = $form;
 
         return $results;
+    }
+
+    public function delete()
+    {
+        $method = self::methods($this->backend, 'delete', ['id' => $this->id]);
+
+        try {
+            self::request([
+                'method' => $method['type'],
+                'headers' => [
+                    'X-Appercode-Session-Token' => $this->backend->token()
+                ],
+                'url' => $method['url'],
+            ]);
+        } catch (BadResponseException $e) {
+            $code = $e->hasResponse() ? $e->getResponse()->getStatusCode() : null;
+            $message = $e->hasResponse() ? $e->getResponse()->getBody() : '';
+
+            throw new DeleteException($message, $code, $e, ['id' => $this->id]);
+        }
     }
 }

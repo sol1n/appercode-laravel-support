@@ -79,6 +79,10 @@ class FormsReportTest extends TestCase
                     : rand(0, 2);
             }
 
+            if ($i == 0) {
+                array_pop($answers);
+            }
+
             $responses[] = FormResponse::create($answers, $form->id, $this->user->backend);
         }
         
@@ -137,6 +141,35 @@ class FormsReportTest extends TestCase
         $report = $form->reportsManager->recreateVariantsReport();
 
         $this->assertEquals(count($report->perspectives), 6);
+
+        $form->delete();
+    }
+
+    public function test_form_report_can_be_deleted()
+    {
+        $formData = $this->formData();
+        $formData['parts'] = [
+            FormCreator::part('somePart', ['textBox', 'radioButtons', 'comboBox', 'imagesCheckBoxList']),
+            FormCreator::part('someAnotherPart', ['checkBoxList', 'radioButtons', 'floatInput', 'imagesCheckBoxList']),
+        ];
+
+        $form = Form::create($formData, $this->user->backend);
+
+        $controlsIds = $form->questions()->map(function ($item) {
+            return $item['id'];
+        })->values()->toArray();
+
+        $report = FormReport::create($this->user->backend, $form->id, $controlsIds);
+
+        $report->delete();
+
+        $reports = FormReport::list($this->user->backend, [
+            'where' => [
+                'formId' => $form->id
+            ]
+        ]);
+
+        $this->assertEquals($reports->count(), 0);
 
         $form->delete();
     }
