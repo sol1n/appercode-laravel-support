@@ -13,7 +13,7 @@
     "require": {
 		"php": ">=7.1",
         "guzzlehttp/guzzle": "^6.3",
-        "nesbot/carbon": "1.25.*"
+        "nesbot/carbon": "^1.25"
     },
     "require-dev": {
 		"phpunit/phpunit": "^7",
