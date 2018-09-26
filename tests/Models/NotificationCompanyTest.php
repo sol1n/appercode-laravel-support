@@ -49,6 +49,9 @@ class NotificationCompanyTest extends TestCase
         ];
     }
 
+    /**
+     * @group notifications
+     */
     public function test_company_can_be_created()
     {
         $company = NotificationCompany::create($this->user->backend, $this->companyData());
@@ -60,6 +63,9 @@ class NotificationCompanyTest extends TestCase
         $company->delete();
     }
 
+    /**
+     * @group notifications
+     */
     public function test_company_can_be_deleted()
     {
         $company = NotificationCompany::create($this->user->backend, $this->companyData())->delete();
@@ -69,6 +75,9 @@ class NotificationCompanyTest extends TestCase
         $this->assertEquals($company->isDeleted, true);
     }
 
+    /**
+     * @group notifications
+     */
     public function test_company_can_be_counted()
     {
         $company = NotificationCompany::create($this->user->backend, $this->companyData());
@@ -83,7 +92,36 @@ class NotificationCompanyTest extends TestCase
         $company->delete();
     }
 
-    public function test_company_can_be_sended()
+    /**
+     * @group notifications
+     */
+    public function test_company_can_be_listed()
+    {
+        $ids = [];
+        for ($i = 0; $i < 3; $i++) {
+            $ids[] = NotificationCompany::create($this->user->backend, $this->companyData())->id;
+        }
+
+        $companies = NotificationCompany::list($this->user->backend, [
+            'where' => [
+                'id' => [
+                    '$in' => $ids
+                ]
+            ]
+        ]);
+
+        $this->assertEquals($companies->count(), 3);
+        foreach ($companies as $company) {
+            $this->assertEquals(in_array($company->id, $ids), true);
+        }
+
+        NotificationCompany::deleteStatic($this->user->backend, $ids);
+    }
+
+    /**
+     * @group notifications
+     */
+    public function not_a_test_company_can_be_sended()
     {
         $company = NotificationCompany::create($this->user->backend, $this->companyData())->send();
         $company = NotificationCompany::find($this->user->backend, $company->id);
@@ -93,6 +131,9 @@ class NotificationCompanyTest extends TestCase
         $company->delete();
     }
 
+    /**
+     * @group notifications
+     */
     public function test_company_can_be_deleted_via_static_method()
     {
         $company = NotificationCompany::create($this->user->backend, $this->companyData());
@@ -104,7 +145,10 @@ class NotificationCompanyTest extends TestCase
         $this->assertEquals($company->isDeleted, true);
     }
 
-    public function test_company_can_be_sended_via_static_method()
+    /**
+     * @group notifications
+     */
+    public function not_a_test_company_can_be_sended_via_static_method()
     {
         $company = NotificationCompany::create($this->user->backend, $this->companyData());
         NotificationCompany::sendStatic($this->user->backend, [$company->id]);
@@ -115,6 +159,9 @@ class NotificationCompanyTest extends TestCase
         $company->delete();
     }
 
+    /**
+     * @group notifications
+     */
     public function test_company_can_be_updated_via_static_method()
     {
         $company = NotificationCompany::create($this->user->backend, $this->companyData());
@@ -130,7 +177,10 @@ class NotificationCompanyTest extends TestCase
         $company->delete();
     }
 
-    public function not_a_test_company_can_be_updated_via_instance_method()
+    /**
+     * @group notifications
+     */
+    public function test_company_can_be_updated_via_instance_method()
     {
         $company = NotificationCompany::create($this->user->backend, $this->companyData());
         $company->deepLink = 'new deepLink value';

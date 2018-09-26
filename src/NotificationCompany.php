@@ -50,8 +50,8 @@ class NotificationCompany implements NotificationCompanyContract
                 ];
             case 'list':
                 return [
-                    'type' => 'GET',
-                    'url' => $backend->server . $backend->project . '/notifications/campaigns'
+                    'type' => 'POST',
+                    'url' => $backend->server . $backend->project . '/notifications/campaigns/query'
                 ];
             case 'save':
                 return [
@@ -60,8 +60,8 @@ class NotificationCompany implements NotificationCompanyContract
                 ];
             case 'count':
                 return [
-                    'type' => 'GET',
-                    'url' => $backend->server . $backend->project . '/notifications/campaigns?' . http_build_query($data)
+                    'type' => 'POST',
+                    'url' => $backend->server . $backend->project . '/notifications/campaigns/query?count=true'
                 ];
             case 'find':
                 return [
@@ -103,7 +103,7 @@ class NotificationCompany implements NotificationCompanyContract
                 : $this->scheduledAt->setTimezone('Europe/Moscow')->toAtomString(),
             'withPushNotification' => $this->withPushNotification,
             'withBadgeNotification' => $this->withBadgeNotification,
-            //'installationFilter' => $this->installationFilter,
+            'installationFilter' => $this->installationFilter,
             'updatedAt' => is_null($this->updatedAt)
                 ? null
                 : $this->updatedAt->setTimezone('Europe/Moscow')->toAtomString(),
@@ -142,13 +142,16 @@ class NotificationCompany implements NotificationCompanyContract
     public static function list(Backend $backend, $filter = []): Collection
     {
         $method = self::methods($backend, 'list');
-        $json = self::jsonRequest([
+        return collect(self::jsonRequest([
             'method' => $method['type'],
+            'json' => $filter,
             'headers' => [
                 'X-Appercode-Session-Token' => $backend->token()
             ],
             'url' => $method['url'],
-        ]);
+        ]))->map(function ($item) use ($backend) {
+            return new self($item, $backend);
+        });
     }
 
     public static function create(Backend $backend, array $fields): NotificationCompanyContract
@@ -221,21 +224,11 @@ class NotificationCompany implements NotificationCompanyContract
 
     public static function count(Backend $backend, array $fields = []): int
     {
-        $params = [
-            'count' => 'true',
-            'take' => 0,
-            'where' => isset($fields['where']) && count($fields['where'])
-                ? json_encode($fields['where'])
-                : json_encode((object) []),
-            'skip' => $fields['skip'] ?? 0,
-            'order' => $fields['skip'] ?? '-createdAt',
-            'include' => $fields['include'] ?? []
-        ];
-
-        $method = self::methods($backend, 'count', $params);
+        $method = self::methods($backend, 'count');
 
         return self::countRequest([
             'method' => $method['type'],
+            'json' => (object) $fields,
             'headers' => [
                 'X-Appercode-Session-Token' => $backend->token()
             ],
