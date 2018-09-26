@@ -17,6 +17,11 @@ trait Authenticatable
         return self::$currentUser;
     }
 
+    public static function setCurrent($user)
+    {
+        self::$currentUser = $user;
+    }
+
     public static function login(Backend $backend, string $username, string $password)
     {
         try {

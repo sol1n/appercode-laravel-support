@@ -8,6 +8,7 @@ use Appercode\Traits\SchemaName;
 use Appercode\Contracts\Element as ElementContract;
 
 use Appercode\Exceptions\Element\ReceiveException;
+use Appercode\Exceptions\Element\DeleteException;
 use Appercode\Exceptions\Element\SaveException;
 
 use Appercode\Schema;
