@@ -44,8 +44,7 @@ class NotificationCompanyTest extends TestCase
                 "deviceType" => null,
                 "appVersion" => null,
                 "language" => null
-            ],
-            'isPublished' => false
+            ]
         ];
     }
 

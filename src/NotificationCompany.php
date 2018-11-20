@@ -25,7 +25,6 @@ class NotificationCompany implements NotificationCompanyContract
     private $backend;
 
     public $id;
-    public $isPublished;
     public $isDeleted;
     public $updatedBy;
     public $updatedAt;
@@ -88,9 +87,6 @@ class NotificationCompany implements NotificationCompanyContract
     {
         return [
             'id' => $this->id,
-            'isPublished' => is_null($this->isPublished)
-                ? null
-                : (bool) $this->isPublished,
             'sentAt' => is_null($this->sentAt)
                ? null
                : $this->isPublished->setTimezone('Europe/Moscow')->toAtomString(),
@@ -113,7 +109,6 @@ class NotificationCompany implements NotificationCompanyContract
     public function __construct(array $data, Backend $backend)
     {
         $this->id = $data['id'];
-        $this->isPublished = (bool) $data['isPublished'];
         $this->sentAt = is_null($data['sentAt'])
             ? null
             : Carbon::parse($data['sentAt']);
