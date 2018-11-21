@@ -8,13 +8,19 @@ use Appercode\Backend;
 use Appercode\Traits\AppercodeRequest;
 use Appercode\Traits\SchemaName;
 
-use Carbon\Carbon;
-use Illuminate\Support\Collection;
+use Appercode\Exceptions\Element\BadgesGetException;
+use Appercode\Exceptions\Element\BadgesPutException;
+use Appercode\Exceptions\Element\ViewsSendException;
+use Appercode\Exceptions\Element\ViewsGetException;
 
 use Appercode\Contracts\Element;
-use Appercode\Contracts\Services\ViewsManager as ViewsManagerInterface;
+use Appercode\Contracts\Services\ViewsManager as ViewsManagerContract;
 
-class ViewsManager implements ViewsManagerInterface
+use Carbon\Carbon;
+use Illuminate\Support\Collection;
+use GuzzleHttp\Exception\BadResponseException;
+
+class ViewsManager implements ViewsManagerContract
 {
     use AppercodeRequest, SchemaName;
 
@@ -45,7 +51,7 @@ class ViewsManager implements ViewsManagerInterface
                 return [
                     'type' => 'POST',
                     'url' => $backend->server . $backend->project . '/views/userEvents'
-                ];            
+                ];
             case 'getViews':
                 return [
                     'type' => 'POST',
@@ -62,45 +68,59 @@ class ViewsManager implements ViewsManagerInterface
         $schemaName = self::getSchemaName($schema);
         $method = self::methods($this->backend, 'putBadges', ['schema' => $schemaName]);
 
-        self::Request([
-            'method' => $method['type'],
-            'json' => $changes,
-            'headers' => [
-                'X-Appercode-Session-Token' => $this->backend->token()
-            ],
-            'url' => $method['url'],
-        ]);
+        try {
+            self::Request([
+                'method' => $method['type'],
+                'json' => $changes,
+                'headers' => [
+                    'X-Appercode-Session-Token' => $this->backend->token()
+                ],
+                'url' => $method['url'],
+            ]);
+        } catch (BadResponseException $e) {
+            $code = $e->hasResponse() ? $e->getResponse()->getStatusCode() : null;
+            $message = $e->hasResponse() ? $e->getResponse()->getBody() : '';
+
+            throw new BadgesPutException($message, $code, $e, $changes);
+        }
     }
 
     public function sendView(User $user, Element $element): void
     {
         $method = self::methods($this->backend, 'sendUserEvents');
-        $beginView = [
-            'schemaId' => $element->schemaName,
-            'objectId' => $element->id,
-            'viewType' => 'begin',
-            'dateTime' => Carbon::now()->subMinutes(1)->toAtomString(),
-            'clientKey' => $this->clientKey
+
+        $events = [
+            [
+                'schemaId' => $element->schemaName,
+                'objectId' => $element->id,
+                'viewType' => 'begin',
+                'dateTime' => Carbon::now()->subMinutes(1)->toAtomString(),
+                'clientKey' => $this->clientKey
+            ],
+            [
+                'schemaId' => $element->schemaName,
+                'objectId' => $element->id,
+                'viewType' => 'end',
+                'dateTime' => Carbon::now()->toAtomString(),
+                'clientKey' => $this->clientKey
+            ]
         ];
 
-        $endView = [
-            'schemaId' => $element->schemaName,
-            'objectId' => $element->id,
-            'viewType' => 'end',
-            'dateTime' => Carbon::now()->toAtomString(),
-            'clientKey' => $this->clientKey
-        ];
+        try {
+            self::Request([
+                'method' => $method['type'],
+                'json' => $events,
+                'headers' => [
+                    'X-Appercode-Session-Token' => $this->backend->token()
+                ],
+                'url' => $method['url'],
+            ]);
+        } catch (BadResponseException $e) {
+            $code = $e->hasResponse() ? $e->getResponse()->getStatusCode() : null;
+            $message = $e->hasResponse() ? $e->getResponse()->getBody() : '';
 
-        self::Request([
-            'method' => $method['type'],
-            'json' => [
-                $beginView, $endView
-            ],
-            'headers' => [
-                'X-Appercode-Session-Token' => $this->backend->token()
-            ],
-            'url' => $method['url'],
-        ]);
+            throw new ViewsSendException($message, $code, $e, $events);
+        }
     }
 
     public function getBadges($schema): Collection
@@ -108,13 +128,20 @@ class ViewsManager implements ViewsManagerInterface
         $schemaName = self::getSchemaName($schema);
         $method = self::methods($this->backend, 'getBadges', ['schema' => $schemaName]);
 
-        $badges = self::jsonRequest([
-            'method' => $method['type'],
-            'headers' => [
-                'X-Appercode-Session-Token' => $this->backend->token()
-            ],
-            'url' => $method['url'],
-        ]);
+        try {
+            $badges = self::jsonRequest([
+                'method' => $method['type'],
+                'headers' => [
+                    'X-Appercode-Session-Token' => $this->backend->token()
+                ],
+                'url' => $method['url'],
+            ]);
+        } catch (BadResponseException $e) {
+            $code = $e->hasResponse() ? $e->getResponse()->getStatusCode() : null;
+            $message = $e->hasResponse() ? $e->getResponse()->getBody() : '';
+
+            throw new BadgesGetException($message, $code, $e);
+        }
 
         return new Collection($badges);
     }
@@ -131,16 +158,23 @@ class ViewsManager implements ViewsManagerInterface
         $schemaName = self::getSchemaName($schema);
         $method = self::methods($this->backend, 'getViews', ['schema' => $schemaName]);
 
-        $views = self::jsonRequest([
-            'method' => $method['type'],
-            'json' => $elementIds,
-            'headers' => [
-                'X-Appercode-Session-Token' => $this->backend->token()
-            ],
-            'url' => $method['url'],
-        ]);
+        try {
+            $views = self::jsonRequest([
+                'method' => $method['type'],
+                'json' => $elementIds,
+                'headers' => [
+                    'X-Appercode-Session-Token' => $this->backend->token()
+                ],
+                'url' => $method['url'],
+            ]);
+        } catch (BadResponseException $e) {
+            $code = $e->hasResponse() ? $e->getResponse()->getStatusCode() : null;
+            $message = $e->hasResponse() ? $e->getResponse()->getBody() : '';
 
-        return (new Collection($views))->mapWithKeys(function($view) {
+            throw new ViewsGetException($message, $code, $e, $elementIds);
+        }
+
+        return (new Collection($views))->mapWithKeys(function ($view) {
             return [$view['objectId'] => $view];
         });
     }
