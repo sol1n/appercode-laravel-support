@@ -63,6 +63,13 @@ class ViewsManager implements ViewsManagerContract
         }
     }
 
+    /**
+     * Changes badges for provided schema, can add or remove badges for elements set
+     * @see http://test.appercode.com/v1/forms/swagger/#!/Views32Tracking/ViewsBadgesBySchemaIdPut
+     * @param  string|Appercode\Contracts\Schema $schema
+     * @param  array  $changes ['add' => [], 'remove' => []]
+     * @return void
+     */
     public function putBadges($schema, array $changes): void
     {
         $schemaName = self::getSchemaName($schema);
@@ -85,6 +92,13 @@ class ViewsManager implements ViewsManagerContract
         }
     }
 
+    /**
+     * Draft method that sends views for tests
+     * @see http://test.appercode.com/v1/forms/swagger/#!/Views32Tracking/ViewsUserEventsPost
+     * @param  Appercode\User    $user    Viewer
+     * @param  Appercode\Element $element The item that is viewed
+     * @return void
+     */
     public function sendView(User $user, Element $element): void
     {
         $method = self::methods($this->backend, 'sendUserEvents');
@@ -123,6 +137,12 @@ class ViewsManager implements ViewsManagerContract
         }
     }
 
+    /**
+     * Returns badges for provided collection
+     * @see http://test.appercode.com/v1/forms/swagger/#!/Views32Tracking/ViewsBadgesBySchemaIdGet
+     * @param  string|Appercode\Schema $schema
+     * @return Illuminate\Support\Collection
+     */
     public function getBadges($schema): Collection
     {
         $schemaName = self::getSchemaName($schema);
