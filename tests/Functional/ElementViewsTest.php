@@ -102,7 +102,6 @@ class ElementViewsTest extends TestCase
 
     /**
      * @group views
-     * @group current
      */
     public function test_can_get_views_of_element()
     {

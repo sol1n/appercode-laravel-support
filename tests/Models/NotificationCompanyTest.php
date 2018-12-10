@@ -40,10 +40,18 @@ class NotificationCompanyTest extends TestCase
             'withPushNotification' => true,
             'withBadgeNotification' => false,
             'installationFilter' => [
-                "channel" => null,
-                "deviceType" => null,
-                "appVersion" => null,
-                "language" => null
+                "channel" => [
+                    'news', 'quizzes'
+                ],
+                "deviceType" => [
+                    'Android'
+                ],
+                "appVersion" => [
+                    '0.1'
+                ],
+                "language" => [
+                    'ru'
+                ]
             ]
         ];
     }
