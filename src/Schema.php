@@ -5,12 +5,14 @@ namespace Appercode;
 use Carbon\Carbon;
 use GuzzleHttp\Exception\BadResponseException;
 
-use Appercode\Backend;
+use Appercode\Contracts\Backend;
+use Appercode\Contracts\Schema as SchemaContract;
+
 use Appercode\Traits\AppercodeRequest;
 use Appercode\Helpers\Schema\ViewData as ViewDataHelper;
 use Appercode\Exceptions\Schema\CreationException;
 
-class Schema
+class Schema implements SchemaContract
 {
     use AppercodeRequest;
 
@@ -249,11 +251,11 @@ class Schema
      *     'localized' => false
      * ]
      *
-     * @param  Appercode\Backend $backend
+     * @param  Appercode\Contracts\Backend $backend
      * @throws Appercode\Exceptions\Schema\CreationException
-     * @return Appercode\Schema
+     * @return Appercode\Contracts\Schema
      */
-    public static function create(array $data, Backend $backend): Schema
+    public static function create(array $data, Backend $backend): SchemaContract
     {
         $fields = [
             "id" => (string) $data['id'],
@@ -305,10 +307,10 @@ class Schema
     /**
      * Receives single schema instance
      * @param  string  $schemaName
-     * @param  Appercode\Backend $backend
-     * @return Appercode\Schema
+     * @param  Appercode\Contracts\Backend $backend
+     * @return Appercode\Contracts\Schema
      */
-    public static function find(string $schemaName, Backend $backend): Schema
+    public static function find(string $schemaName, Backend $backend): SchemaContract
     {
         $method = self::methods($backend, 'find', ['schema' => $schemaName]);
 
@@ -323,9 +325,9 @@ class Schema
 
     /**
      * Deletes current schema
-     * @return Appercode\Schema removed schema instance
+     * @return Appercode\Contracts\Schema removed schema instance
      */
-    public function delete(): Schema
+    public function delete(): SchemaContract
     {
         $method = self::methods($this->backend, 'delete', ['schema' => $this->id]);
 

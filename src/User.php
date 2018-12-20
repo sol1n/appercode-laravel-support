@@ -2,11 +2,13 @@
 
 namespace Appercode;
 
-use Appercode\Backend;
 use Appercode\Traits\Authenticatable;
 use Appercode\Traits\AppercodeRequest;
 
-class User
+use Appercode\Contracts\Backend;
+use Appercode\Contracts\User\Authenticatable as AuthenticatableContract;
+
+class User implements AuthenticatableContract
 {
     use Authenticatable, AppercodeRequest;
 

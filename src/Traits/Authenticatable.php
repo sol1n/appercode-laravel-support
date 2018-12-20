@@ -2,27 +2,29 @@
 
 namespace Appercode\Traits;
 
-use Appercode\Backend;
 use Appercode\Traits\AppercodeRequest;
 use GuzzleHttp\Exception\ClientException;
 
 use Appercode\Exceptions\User\WrongCredentialsException;
 
+use Appercode\Contracts\Backend;
+use Appercode\Contracts\User\Authenticatable as AuthenticatableContract;
+
 trait Authenticatable
 {
     private static $currentUser = null;
     
-    public static function current()
+    public static function current(): AuthenticatableContract
     {
         return self::$currentUser;
     }
 
-    public static function setCurrent($user)
+    public static function setCurrent(AuthenticatableContract $user)
     {
         self::$currentUser = $user;
     }
 
-    public static function login(Backend $backend, string $username, string $password)
+    public static function login(Backend $backend, string $username, string $password): AuthenticatableContract
     {
         try {
             $json = self::jsonRequest([
@@ -46,7 +48,7 @@ trait Authenticatable
         }
     }
 
-    public static function loginByToken(Backend $backend, string $token)
+    public static function loginByToken(Backend $backend, string $token): AuthenticatableContract
     {
         $json = self::jsonRequest([
             'method' => self::methods($backend, 'loginByToken')['type'],
@@ -63,7 +65,7 @@ trait Authenticatable
     }
 
 
-    public function regenerateToken()
+    public function regenerateToken(): AuthenticatableContract
     {
         return self::loginByToken($this->backend, $this->refreshToken);
     }

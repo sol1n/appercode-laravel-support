@@ -5,14 +5,16 @@ namespace Appercode;
 use GuzzleHttp\Exception\ServerException;
 use Illuminate\Support\Facades\Cache;
 
-use Appercode\User;
 use Appercode\Exceptions\Backend\BackendNotExists;
 use Appercode\Exceptions\Backend\BackendNotSelected;
 use Appercode\Exceptions\Backend\BackendNoServerProvided;
 use Appercode\Exceptions\Backend\LogoutException;
 use Appercode\Traits\AppercodeRequest;
 
-class Backend
+use Appercode\Contracts\Backend as BackendContract;
+use Appercode\Contracts\User\Authenticatable;
+
+class Backend implements BackendContract
 {
     const CHECK_CACHE_LIFETIME = 10;
 
@@ -22,19 +24,19 @@ class Backend
     public $server;
     public $user;
 
-    public function setServer(string $server)
+    public function setServer(string $server): BackendContract
     {
         $this->server = $server;
         return $this;
     }
 
-    public function setProject(string $project)
+    public function setProject(string $project): BackendContract
     {
         $this->project = $project;
         return $this;
     }
 
-    public function setUser(User $user)
+    public function setUser(Authenticatable $user): BackendContract
     {
         $this->user = $user;
         return $this;

@@ -1,7 +1,7 @@
 <?php
 namespace Appercode\Helpers\Schema;
 
-use Appercode\Schema;
+use Appercode\Contracts\Schema;
 
 class ViewData
 {

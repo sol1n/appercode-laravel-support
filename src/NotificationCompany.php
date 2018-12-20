@@ -4,6 +4,7 @@ namespace Appercode;
 
 use Appercode\Traits\AppercodeRequest;
 
+use Appercode\Contracts\Backend;
 use Appercode\Contracts\NotificationCompany as NotificationCompanyContract;
 
 use Appercode\Exceptions\NotificationCompany\CreateException;
@@ -11,8 +12,6 @@ use Appercode\Exceptions\NotificationCompany\ReceiveException;
 use Appercode\Exceptions\NotificationCompany\SaveException;
 use Appercode\Exceptions\NotificationCompany\DeleteException;
 use Appercode\Exceptions\NotificationCompany\SendException;
-
-use Appercode\Backend;
 
 use Carbon\Carbon;
 use Illuminate\Support\Collection;

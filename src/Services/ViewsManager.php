@@ -3,7 +3,6 @@
 namespace Appercode\Services;
 
 use Appercode\User;
-use Appercode\Backend;
 
 use Appercode\Traits\AppercodeRequest;
 use Appercode\Traits\SchemaName;
@@ -14,6 +13,7 @@ use Appercode\Exceptions\Element\ViewsSendException;
 use Appercode\Exceptions\Element\ViewsGetException;
 
 use Appercode\Contracts\Element;
+use Appercode\Contracts\Backend;
 use Appercode\Contracts\Services\ViewsManager as ViewsManagerContract;
 
 use Carbon\Carbon;
@@ -96,7 +96,7 @@ class ViewsManager implements ViewsManagerContract
      * Draft method that sends views for tests
      * @see http://test.appercode.com/v1/forms/swagger/#!/Views32Tracking/ViewsUserEventsPost
      * @param  Appercode\User    $user    Viewer
-     * @param  Appercode\Element $element The item that is viewed
+     * @param  Appercode\Contracts\Element $element The item that is viewed
      * @return void
      */
     public function sendView(User $user, Element $element): void
@@ -140,7 +140,7 @@ class ViewsManager implements ViewsManagerContract
     /**
      * Returns badges for provided collection
      * @see http://test.appercode.com/v1/forms/swagger/#!/Views32Tracking/ViewsBadgesBySchemaIdGet
-     * @param  string|Appercode\Schema $schema
+     * @param  string|Appercode\Contracts\Schema $schema
      * @return Illuminate\Support\Collection
      */
     public function getBadges($schema): Collection

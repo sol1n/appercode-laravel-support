@@ -3,7 +3,7 @@
 namespace Appercode\Services;
 
 use Appercode\Element;
-use Appercode\Backend;
+use Appercode\Contracts\Backend;
 use Illuminate\Support\Collection;
 use Appercode\Services\ElementCountingManager;
 use Appercode\Traits\SchemaName;

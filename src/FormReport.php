@@ -4,6 +4,7 @@ namespace Appercode;
 
 use Appercode\Traits\AppercodeRequest;
 
+use Appercode\Contracts\Backend;
 use Appercode\Contracts\FormReport as FormReportContract;
 
 use Appercode\Form;

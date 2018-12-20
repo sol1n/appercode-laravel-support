@@ -2,7 +2,8 @@
 
 namespace Appercode\Contracts;
 
-use Appercode\Backend;
+use Appercode\Contracts\Backend;
+
 use Illuminate\Support\Collection;
 
 interface FormResponse

@@ -4,6 +4,7 @@ namespace Appercode;
 
 use Appercode\Traits\AppercodeRequest;
 
+use Appercode\Contracts\Backend;
 use Appercode\Contracts\FormResponse as FormResponseContract;
 
 use Appercode\Form;
@@ -100,7 +101,7 @@ class FormResponse implements FormResponseContract
      * Creates response for selected form
      * @param  array   $answers  answer values keyed by control ids
      * @param  string  $formId
-     * @param  Appercode\Backend $backend
+     * @param  Appercode\Contracts\Backend $backend
      * @param  bool    $partial  if true sends answers without submiting form
      * @return Appercode\Contracts\FormResponseContract
      */
@@ -146,7 +147,7 @@ class FormResponse implements FormResponseContract
 
     /**
      * Returns response by id
-     * @param  Appercode\Backend $backend
+     * @param  Appercode\Contracts\Backend $backend
      * @param  string  $id
      * @return Appercode\Contracts\FormResponseContract
      */
@@ -161,7 +162,7 @@ class FormResponse implements FormResponseContract
 
     /**
      * Returns responses by query
-     * @param  Appercode\Backend $backend
+     * @param  Appercode\Contracts\Backend $backend
      * @param  array  $filter
      * @return Illuminate\Support\Collection
      */
@@ -192,7 +193,7 @@ class FormResponse implements FormResponseContract
 
     /**
      * Returns responses count for provided filter
-     * @param  Appercode\Backend $backend
+     * @param  Appercode\Contracts\Backend $backend
      * @param  array  $filter
      * @return int
      */

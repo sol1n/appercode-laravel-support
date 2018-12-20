@@ -2,11 +2,10 @@
 
 namespace Appercode\Services;
 
-use Appercode\Backend;
-
 use Appercode\FormReport;
 
-use Appercode\Contracts\Form as FormContract;
+use Appercode\Contracts\Backend;
+use Appercode\Contracts\Form;
 use Appercode\Contracts\FormReport as FormReportContract;
 
 class FormReportsManager
@@ -15,7 +14,7 @@ class FormReportsManager
 
     public $form;
 
-    public function __construct(FormContract $form, Backend $backend)
+    public function __construct(Form $form, Backend $backend)
     {
         $this->form = $form;
         $this->backend = $backend;

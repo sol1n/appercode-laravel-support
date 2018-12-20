@@ -4,7 +4,8 @@ namespace Appercode;
 
 use GuzzleHttp\Exception\BadResponseException;
 
-use Appercode\Backend;
+use Appercode\Contracts\Backend;
+
 use Appercode\Exceptions\Settings\TimeReceiveException;
 use Appercode\Traits\AppercodeRequest;
 
@@ -30,7 +31,7 @@ class Settings
 
     /**
      * Returns current server DateTime
-     * @param  Appercode\Backend $backend
+     * @param  Appercode\Contracts\Backend $backend
      * @throws  Appercode\Exceptions\Settings\TimeReceiveException
      * @return Carbon\Carbon
      */

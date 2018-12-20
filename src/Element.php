@@ -5,14 +5,13 @@ namespace Appercode;
 use Appercode\Traits\AppercodeRequest;
 use Appercode\Traits\SchemaName;
 
+use Appercode\Contracts\Schema;
+use Appercode\Contracts\Backend;
 use Appercode\Contracts\Element as ElementContract;
 
 use Appercode\Exceptions\Element\ReceiveException;
 use Appercode\Exceptions\Element\DeleteException;
 use Appercode\Exceptions\Element\SaveException;
-
-use Appercode\Schema;
-use Appercode\Backend;
 
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
@@ -133,8 +132,8 @@ class Element implements ElementContract
 
     /**
      * Returns count of elements for schema and filter
-     * @param  Appercode\Schema|string  $schema
-     * @param  Appercode\Backend $backend
+     * @param  Appercode\Contracts\Schema|string  $schema
+     * @param  Appercode\Contracts\Backend $backend
      * @param  array   $query   filter and request params
      * @return int
      */
@@ -160,9 +159,9 @@ class Element implements ElementContract
 
     /**
      * Creates new element in selected schema
-     * @param  Appercode/Schema|string  $schema Schema of a new element
+     * @param  Appercode/Contracts\Schema|string  $schema Schema of a new element
      * @param  array   $fields
-     * @param  Appercode\Backend $backend
+     * @param  Appercode\Contracts\Backend $backend
      * @return Appercode\Contracts\ElementContract
      */
     public static function create($schema, array $fields, Backend $backend): ElementContract
@@ -184,10 +183,10 @@ class Element implements ElementContract
 
     /**
      * Static method for saving selected fields without getting model
-     * @param  Appercode\Schema|string $schema
+     * @param  Appercode\Contracts\Schema|string $schema
      * @param  string  $id
      * @param  array   $fields
-     * @param  Appercode\Backend $backend
+     * @param  Appercode\Contracts\Backend $backend
      * @return void
      */
     public static function update($schema, string $id, array $fields, Backend $backend): void
@@ -214,10 +213,10 @@ class Element implements ElementContract
 
     /**
      * Saves localized fields values for provided languages
-     * @param  Appercode\Schema|string  $schema
+     * @param  Appercode\Contracts\Schema|string  $schema
      * @param  $id
      * @param  array   $languages as $language => $fieldsValues
-     * @param  Appercode\Backend $backend
+     * @param  Appercode\Contracts\Backend $backend
      * @return void
      */
     public static function updateLanguages($schema, string $id, array $languages, Backend $backend): void
@@ -316,7 +315,7 @@ class Element implements ElementContract
 
     /**
      * Deletes current element
-     * @return Appercode\Element removed element instance
+     * @return Appercode\Contracts\Element removed element instance
      */
     public function delete(): ElementContract
     {
@@ -342,8 +341,8 @@ class Element implements ElementContract
 
     /**
      * Returns collection elements from schema with filter
-     * @param  Appercode\Schema|string  $schema
-     * @param  Appercode\Backend $backend
+     * @param  Appercode\Contracts\Schema|string  $schema
+     * @param  Appercode\Contracts\Backend $backend
      * @param  array|null  $filter
      * @param  array|string  $languages
      * @return Illuminate\Support\Collection
@@ -414,10 +413,10 @@ class Element implements ElementContract
 
     /**
      * Returns single element from collection
-     * @param  Appercode\Schema  $schema
+     * @param  Appercode\Contracts\Schema  $schema
      * @param  string  $id
-     * @param  Appercode\Backend $backend
-     * @return Appercode\Element
+     * @param  Appercode\Contracts\Backend $backend
+     * @return Appercode\Contracts\Element
      * @throws Appercode\Exceptions\Element\ReceiveException
      */
     public static function find($schema, string $id, Backend $backend): ElementContract
@@ -447,8 +446,8 @@ class Element implements ElementContract
      * Elements bulk update method
      * @param  array   $ids
      * @param  array   $changes
-     * @param  Appercode\Schema|string  $schema
-     * @param  Backend $backend
+     * @param  Appercode\Contracts\Schema|string  $schema
+     * @param  Appercode\Contracts\Backend $backend
      * @return void
      */
     public static function bulkUpdate($schema, array $ids, array $changes, Backend $backend): void
@@ -471,9 +470,9 @@ class Element implements ElementContract
 
     /**
      * Returns results of bulk queries to collection
-     * @param  Appercode\Schema|string  $schema
+     * @param  Appercode\Contracts\Schema|string  $schema
      * @param  array   $queries array of objects with keys: count, where, include, order, skip, take
-     * @param  Appercode\Backend $backend
+     * @param  Appercode\Contracts\Backend $backend
      * @return Illuminate\Support\Collection collection of objects with keys: count, list
      */
     public static function bulk($schema, array $queries, Backend $backend): Collection
@@ -509,9 +508,9 @@ class Element implements ElementContract
 
     /**
      * Executes batch elements delete request
-     * @param  Appercode\Schema|string  $schema
+     * @param  Appercode\Contracts\Schema|string  $schema
      * @param  array   $ids     array of elements id
-     * @param  Appercode\Backend $backend
+     * @param  Appercode\Contracts\Backend $backend
      * @return void
      */
     public static function bulkDelete($schema, array $ids, Backend $backend): void

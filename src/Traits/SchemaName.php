@@ -2,13 +2,13 @@
 
 namespace Appercode\Traits;
 
-use Appercode\Schema;
+use Appercode\Contracts\Schema;
 
 trait SchemaName
 {
     /**
      * Check parameter type and return schema name.
-     * Allows provide Appercode\Schema and string schema name as one parameter
+     * Allows provide Appercode\Contracts\Schema and string schema name as one parameter
      * @param  Appercode\Schema|string $schema
      * @return string
      */
