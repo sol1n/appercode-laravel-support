@@ -15,6 +15,7 @@ interface Task
     public static function count(Backend $backend, array $filter = []): int;
     public static function list(Backend $backend, array $filter = []): Collection;
     public static function update(string $id, array $fields, Backend $backend);
+    public static function remove(string $id, Backend $backend);
 
     public function delete(): Task;
     public function save(): Task;

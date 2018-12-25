@@ -136,7 +136,6 @@ class OnboardingTasksTest extends TestCase
     /**
      * @group onboarding
      * @group tasks
-     * @group current
      */
     public function test_task_can_be_updated_via_static_method()
     {
@@ -148,5 +147,20 @@ class OnboardingTasksTest extends TestCase
 
         $this->assertEquals($task->title, 'new title');
         $task->delete();
+    }
+
+    /**
+     * @group onboarding
+     * @group tasks
+     */
+    public function test_task_can_be_deleted_via_static_method()
+    {
+        $task = Task::create($this->taskData(), $this->user->backend);
+
+        Task::remove($task->id, $this->user->backend);
+
+        $task = Task::find($task->id, $this->user->backend);
+
+        $this->assertEquals($task->isDeleted, true);
     }
 }

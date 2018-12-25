@@ -232,6 +232,7 @@ class Task implements TaskContract
      * @param  Appercode\Contracts\Backend $backend
      * @param  array   $filter
      * @return Illuminate\Support\Collection
+     * @throws Appercode\Exceptions\Onboarding\Task\RecieveException
      */
     public static function list(Backend $backend, array $filter = []): Collection
     {
@@ -262,6 +263,7 @@ class Task implements TaskContract
      * @param  string  $id
      * @param  array   $fields
      * @param  Appercode\Contracts\Backend $backend
+     * @throws Appercode\Exceptions\Onboarding\Task\SaveException
      * @return void
      */
     public static function update(string $id, array $fields, Backend $backend)
@@ -286,8 +288,36 @@ class Task implements TaskContract
     }
 
     /**
+     * Static method for removing tasks
+     * @param  string  $id
+     * @param  Appercode\Contracts\Backend $backend
+     * @throws Appercode\Exceptions\Onboarding\Task\DeleteException
+     * @return void
+     */
+    public static function remove(string $id, Backend $backend)
+    {
+        try {
+            $method = self::methods($backend, 'delete', [
+                'id' => $id
+            ]);
+
+            $json = self::jsonRequest([
+                'method' => $method['type'],
+                'headers' => ['X-Appercode-Session-Token' => $backend->token()],
+                'url' => $method['url'],
+            ]);
+        } catch (BadResponseException $e) {
+            $code = $e->hasResponse() ? $e->getResponse()->getStatusCode() : null;
+            $message = $e->hasResponse() ? $e->getResponse()->getBody() : '';
+
+            throw new DeleteException($message, $code, $e);
+        }
+    }
+
+    /**
      * Updates task instance fields to appercode backend
      * @return Appercode\Contracts\Onboarding\Task
+     * @throws Appercode\Exceptions\Onboarding\Task\SaveException
      */
     public function save(): TaskContract
     {
