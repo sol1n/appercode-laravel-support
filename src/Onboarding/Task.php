@@ -43,6 +43,7 @@ class Task implements TaskContract
     const CONFIRMATION_TYPE_BY_PERFORMER = 'byPerformer';
     const CONFIRMATION_TYPE_BY_MENTOR = 'byMentor';
     const CONFIRMATION_TYPE_BY_ADMINISTRATOR = 'byAdministrator';
+    const CONFIRMATION_TYPE_BY_FORM = 'byForm';
 
     protected static function methods(Backend $backend, string $name, array $data = [])
     {
@@ -50,32 +51,32 @@ class Task implements TaskContract
             case 'create':
                 return [
                     'type' => 'POST',
-                    'url' => $backend->server . $backend->project . '/onboardingTasks'
+                    'url' => $backend->server . $backend->project . '/onboarding/tasks'
                 ];
             case 'delete':
                 return [
                     'type' => 'DELETE',
-                    'url' => $backend->server . $backend->project . '/onboardingTasks/' . $data['id']
+                    'url' => $backend->server . $backend->project . '/onboarding/tasks/' . $data['id']
                 ];
             case 'get':
                 return [
                     'type' => 'GET',
-                    'url' => $backend->server . $backend->project . '/onboardingTasks/' . $data['id']
+                    'url' => $backend->server . $backend->project . '/onboarding/tasks/' . $data['id']
                 ];
             case 'count':
                 return [
                     'type' => 'POST',
-                    'url' => $backend->server . $backend->project . '/onboardingTasks/query?count=true'
+                    'url' => $backend->server . $backend->project . '/onboarding/tasks/query?count=true'
                 ];
             case 'list':
                 return [
                     'type' => 'POST',
-                    'url' => $backend->server . $backend->project . '/onboardingTasks/query'
+                    'url' => $backend->server . $backend->project . '/onboarding/tasks/query'
                 ];
             case 'update':
                 return [
                     'type' => 'PUT',
-                    'url' => $backend->server . $backend->project . '/onboardingTasks/' . $data['id']
+                    'url' => $backend->server . $backend->project . '/onboarding/tasks/' . $data['id']
                 ];
 
             default:
@@ -155,7 +156,7 @@ class Task implements TaskContract
             $code = $e->hasResponse() ? $e->getResponse()->getStatusCode() : null;
             $message = $e->hasResponse() ? $e->getResponse()->getBody() : '';
 
-            throw new CreateException($message, $code, $e, $data);
+            throw new CreateException($message, $code, $e, $fields);
         }
     }
 

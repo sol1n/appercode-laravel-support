@@ -24,14 +24,12 @@ class OnboardingTasksTest extends TestCase
         return [
             'title' => 'task title',
             'subtitle' => 'task subtitle',
-            'imageFileId' => '00000000-0000-0000-0000-000000000000',
             'description' => 'task description',
             'isRequired' => true,
             'beginAt' => 1,
             'endAt' => 9,
             'orderIndex' => 0,
-            'confirmationFormId' => '00000000-0000-0000-0000-000000000000',
-            'confirmationType' => TASK::CONFIRMATION_TYPE_BY_MENTOR,
+            'confirmationType' => TASK::CONFIRMATION_TYPE_BY_ADMINISTRATOR,
             'reward' => [
                 'points' => 12
             ]
@@ -79,11 +77,11 @@ class OnboardingTasksTest extends TestCase
     public function test_task_can_be_counted()
     {
         $data = $this->taskData();
-        $data['confirmationType'] = Task::CONFIRMATION_TYPE_BY_ADMINISTRATOR;
+        $data['orderIndex'] = 25;
         $task = Task::create($data, $this->user->backend);
 
         $tasksCount = Task::count($this->user->backend, [
-            'confirmationType' => Task::CONFIRMATION_TYPE_BY_ADMINISTRATOR
+            'orderIndex' => 25
         ]);
 
         $this->assertEquals($tasksCount, 1);
