@@ -1,6 +1,6 @@
 <?php
 
-namespace Appercode\Exceptions\Onboarding\Block;
+namespace Appercode\Exceptions\Onboarding;
 
 use Exception;
 

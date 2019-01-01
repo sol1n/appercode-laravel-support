@@ -2,42 +2,77 @@
 
 namespace Appercode\Onboarding;
 
-use GuzzleHttp\Exception\BadResponseException;
+use Appercode\Onboarding\Entity;
 
 use Appercode\Contracts\Backend;
 use Appercode\Contracts\Onboarding\Task as TaskContract;
 
-use Appercode\Exceptions\Onboarding\Task\CreateException;
-use Appercode\Exceptions\Onboarding\Task\DeleteException;
-use Appercode\Exceptions\Onboarding\Task\RecieveException;
-use Appercode\Exceptions\Onboarding\Task\SaveException;
-
-use Appercode\Traits\AppercodeRequest;
-
-use Carbon\Carbon;
-use Illuminate\Support\Collection;
-
-class Task implements TaskContract
+class Task extends Entity implements TaskContract
 {
-    use AppercodeRequest;
-
-    private $backend;
-
-    public $id;
-    public $createdAt;
-    public $updatedAt;
-    public $updatedBy;
-    public $isDeleted;
+    /**
+     * Rewards for task performance (points or achievement)
+     * @var array
+     */
     public $reward;
+
+    /**
+     * Enum of byForm, byPerformer, byMentor, byAdministrator
+     * @var string
+     */
     public $confirmationType;
+
+    /**
+     * Appercode/Form id, using if confirmation type is "byForm"
+     * @var string
+     */
     public $confirmationFormId;
+
+    /**
+     * Order index in a block
+     * @var int
+     */
     public $orderIndex;
+
+    /**
+     * Availabitiy day number
+     * @var int
+     */
     public $beginAt;
+
+    /**
+     * deadline day number
+     * @var int
+     */
     public $endAt;
+
+    /**
+     * Required in a block property
+     * @var bool
+     */
     public $isRequired;
+
+    /**
+     * Full html description
+     * @var string
+     */
     public $description;
+
+    /**
+     * Appercode\File image id
+     * @var string
+     */
     public $imageFileId;
+
+    /**
+     * Short description (300 symbols max)
+     * @var string
+     */
     public $subtitle;
+
+    /**
+     * Title (40 symbols max)
+     * @var string
+     */
     public $title;
 
     const CONFIRMATION_TYPE_BY_PERFORMER = 'byPerformer';
@@ -86,12 +121,7 @@ class Task implements TaskContract
 
     public function __construct(array $data, Backend $backend)
     {
-        $this->id = $data['id'];
-        $this->createdAt = new Carbon($data['createdAt']);
-        $this->updatedAt = new Carbon($data['updatedAt']);
-
-        $this->updatedBy = $data['updatedBy'];
-        $this->isDeleted = (bool) $data['isDeleted'];
+        parent::__construct($data, $backend);
 
         $this->reward = $data['reward'] ?? [];
         $this->confirmationType = $data['confirmationType'];
@@ -105,8 +135,6 @@ class Task implements TaskContract
         $this->imageFileId = $data['imageFileId'] ?? null;
         $this->subtitle = $data['subtitle'] ?? null;
         $this->title = $data['title'] ?? null;
-
-        $this->backend = $backend;
 
         return $this;
     }
@@ -130,243 +158,5 @@ class Task implements TaskContract
             'confirmationType' => $this->confirmationType,
             'reward' => (object) $this->reward
         ];
-    }
-
-    /**
-     * Creates new task and returns it instance
-     * @param  array   $fields
-     * @param  Appercode\Contracts\Backend $backend
-     * @return Appercode\Contracts\Onboarding\Task
-     * @throws Appercode\Exceptions\Onboarding\Task\CreateException
-     */
-    public static function create(array $fields, Backend $backend): TaskContract
-    {
-        try {
-            $method = self::methods($backend, 'create');
-
-            $json = self::jsonRequest([
-                'method' => $method['type'],
-                'json' => $fields,
-                'headers' => ['X-Appercode-Session-Token' => $backend->token()],
-                'url' => $method['url'],
-            ]);
-
-            return new Task($json, $backend);
-        } catch (BadResponseException $e) {
-            $code = $e->hasResponse() ? $e->getResponse()->getStatusCode() : null;
-            $message = $e->hasResponse() ? $e->getResponse()->getBody() : '';
-
-            throw new CreateException($message, $code, $e, $fields);
-        }
-    }
-
-    /**
-     * Returns task by id
-     * @param  string   id
-     * @param  Appercode\Contracts\Backend $backend
-     * @return Appercode\Contracts\Onboarding\Task
-     * @throws Appercode\Exceptions\Onboarding\Task\RecieveException
-     */
-    public static function find(string $id, Backend $backend): TaskContract
-    {
-        try {
-            $method = self::methods($backend, 'get', [
-                'id' => $id
-            ]);
-
-            $json = self::jsonRequest([
-                'method' => $method['type'],
-                'headers' => ['X-Appercode-Session-Token' => $backend->token()],
-                'url' => $method['url'],
-            ]);
-
-            return new Task($json, $backend);
-        } catch (BadResponseException $e) {
-            $code = $e->hasResponse() ? $e->getResponse()->getStatusCode() : null;
-            $message = $e->hasResponse() ? $e->getResponse()->getBody() : '';
-
-            throw new RecieveException($message, $code, $e, [
-                'id' => $id
-            ]);
-        }
-    }
-
-    /**
-     * Returns tasks count
-     * @param  Appercode\Contracts\Backend $backend
-     * @param  array   $filter
-     * @return int
-     * @throws Appercode\Exceptions\Onboarding\Task\RecieveException
-     */
-    public static function count(Backend $backend, array $filter = []): int
-    {
-        try {
-            $method = self::methods($backend, 'count');
-
-            $fields = [
-                'take' => 0
-            ];
-
-            if (!empty($filter)) {
-                $fields['where'] = $filter;
-            }
-
-            return self::countRequest([
-                'method' => $method['type'],
-                'json' => $fields,
-                'headers' => ['X-Appercode-Session-Token' => $backend->token()],
-                'url' => $method['url'],
-            ]);
-        } catch (BadResponseException $e) {
-            $code = $e->hasResponse() ? $e->getResponse()->getStatusCode() : null;
-            $message = $e->hasResponse() ? $e->getResponse()->getBody() : '';
-
-            throw new RecieveException($message, $code, $e, [
-                'count' => true,
-                'filter' => $filter
-            ]);
-        }
-    }
-
-    /**
-     * Lists tasks with order, filter
-     * @param  Appercode\Contracts\Backend $backend
-     * @param  array   $filter
-     * @return Illuminate\Support\Collection
-     * @throws Appercode\Exceptions\Onboarding\Task\RecieveException
-     */
-    public static function list(Backend $backend, array $filter = []): Collection
-    {
-        try {
-            $method = self::methods($backend, 'list');
-
-            return collect(self::jsonRequest([
-                'method' => $method['type'],
-                'json' => (object) $filter,
-                'headers' => ['X-Appercode-Session-Token' => $backend->token()],
-                'url' => $method['url'],
-            ]))->map(function ($data) use ($backend) {
-                return new Task($data, $backend);
-            });
-        } catch (BadResponseException $e) {
-            $code = $e->hasResponse() ? $e->getResponse()->getStatusCode() : null;
-            $message = $e->hasResponse() ? $e->getResponse()->getBody() : '';
-
-            throw new RecieveException($message, $code, $e, [
-                'count' => false,
-                'filter' => $filter
-            ]);
-        }
-    }
-
-    /**
-     * Save fields for provided task id
-     * @param  string  $id
-     * @param  array   $fields
-     * @param  Appercode\Contracts\Backend $backend
-     * @throws Appercode\Exceptions\Onboarding\Task\SaveException
-     * @return void
-     */
-    public static function update(string $id, array $fields, Backend $backend)
-    {
-        try {
-            $method = self::methods($backend, 'update', [
-                'id' => $id
-            ]);
-
-            $json = self::jsonRequest([
-                'method' => $method['type'],
-                'json' => $fields,
-                'headers' => ['X-Appercode-Session-Token' => $backend->token()],
-                'url' => $method['url'],
-            ]);
-        } catch (BadResponseException $e) {
-            $code = $e->hasResponse() ? $e->getResponse()->getStatusCode() : null;
-            $message = $e->hasResponse() ? $e->getResponse()->getBody() : '';
-
-            throw new SaveException($message, $code, $e);
-        }
-    }
-
-    /**
-     * Static method for removing tasks
-     * @param  string  $id
-     * @param  Appercode\Contracts\Backend $backend
-     * @throws Appercode\Exceptions\Onboarding\Task\DeleteException
-     * @return void
-     */
-    public static function remove(string $id, Backend $backend)
-    {
-        try {
-            $method = self::methods($backend, 'delete', [
-                'id' => $id
-            ]);
-
-            $json = self::jsonRequest([
-                'method' => $method['type'],
-                'headers' => ['X-Appercode-Session-Token' => $backend->token()],
-                'url' => $method['url'],
-            ]);
-        } catch (BadResponseException $e) {
-            $code = $e->hasResponse() ? $e->getResponse()->getStatusCode() : null;
-            $message = $e->hasResponse() ? $e->getResponse()->getBody() : '';
-
-            throw new DeleteException($message, $code, $e);
-        }
-    }
-
-    /**
-     * Updates task instance fields to appercode backend
-     * @return Appercode\Contracts\Onboarding\Task
-     * @throws Appercode\Exceptions\Onboarding\Task\SaveException
-     */
-    public function save(): TaskContract
-    {
-        try {
-            $method = self::methods($this->backend, 'update', [
-                'id' => $this->id
-            ]);
-
-            $json = self::jsonRequest([
-                'method' => $method['type'],
-                'json' => $this->toJson(),
-                'headers' => ['X-Appercode-Session-Token' => $this->backend->token()],
-                'url' => $method['url'],
-            ]);
-        } catch (BadResponseException $e) {
-            $code = $e->hasResponse() ? $e->getResponse()->getStatusCode() : null;
-            $message = $e->hasResponse() ? $e->getResponse()->getBody() : '';
-
-            throw new SaveException($message, $code, $e, $this);
-        }
-
-        return $this;
-    }
-
-    /**
-     * Removes task and returns instance
-     * @return Appercode\Contracts\Onboarding\Task
-     * @throws Appercode\Exceptions\Onboarding\Task\DeleteException
-     */
-    public function delete(): TaskContract
-    {
-        try {
-            $method = self::methods($this->backend, 'delete', [
-                'id' => $this->id
-            ]);
-
-            $json = self::jsonRequest([
-                'method' => $method['type'],
-                'headers' => ['X-Appercode-Session-Token' => $this->backend->token()],
-                'url' => $method['url'],
-            ]);
-        } catch (BadResponseException $e) {
-            $code = $e->hasResponse() ? $e->getResponse()->getStatusCode() : null;
-            $message = $e->hasResponse() ? $e->getResponse()->getBody() : '';
-
-            throw new DeleteException($message, $code, $e, $this);
-        }
-
-        return $this;
     }
 }
