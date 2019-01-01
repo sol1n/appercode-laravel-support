@@ -6,17 +6,19 @@ use Tests\TestCase;
 
 use Appercode\User;
 use Appercode\Backend;
-use Appercode\Onboarding\Block;
+use Appercode\Services\OnboardingManager;
 
-class OnboardingBlocksTest extends TestCase
+class BlocksTest extends TestCase
 {
     private $user;
+    private $manager;
 
     protected function setUp()
     {
         parent::setUp();
 
         $this->user = User::login((new Backend), getenv('APPERCODE_USER'), getenv('APPERCODE_PASSWORD'));
+        $this->manager = new OnboardingManager($this->user->backend);
     }
 
     protected function blockData()
@@ -40,7 +42,7 @@ class OnboardingBlocksTest extends TestCase
      */
     public function test_block_can_be_created()
     {
-        $block = Block::create($this->blockData(), $this->user->backend);
+        $block = $this->manager->blocks()->create($this->blockData());
 
         foreach ($this->blockData() as $index => $value) {
             $this->assertEquals($block->{$index}, $value);
@@ -59,11 +61,11 @@ class OnboardingBlocksTest extends TestCase
      */
     public function test_block_can_be_deleted()
     {
-        $block = Block::create($this->blockData(), $this->user->backend);
+        $block = $this->manager->blocks()->create($this->blockData());
 
         $block->delete();
 
-        $block = Block::find($block->id, $this->user->backend);
+        $block = $this->manager->blocks()->find($block->id);
         $this->assertEquals($block->isDeleted, true);
     }
 
@@ -73,11 +75,11 @@ class OnboardingBlocksTest extends TestCase
      */
     public function test_block_can_be_deleted_via_static_method()
     {
-        $block = Block::create($this->blockData(), $this->user->backend);
+        $block = $this->manager->blocks()->create($this->blockData());
 
-        Block::remove($block->id, $this->user->backend);
+        $this->manager->blocks()->delete($block->id);
 
-        $block = Block::find($block->id, $this->user->backend);
+        $block = $this->manager->blocks()->find($block->id);
         $this->assertEquals($block->isDeleted, true);
     }
 
@@ -85,13 +87,13 @@ class OnboardingBlocksTest extends TestCase
      * @group onboarding
      * @group blocks
      */
-    public function disabledtest_blocks_can_be_counted()
+    public function disabled_test_blocks_can_be_counted()
     {
-        $block = Block::create(array_merge($this->blockData(), [
+        $block = $this->manager->blocks()->create(array_merge($this->blockData(), [
             'title' => 'title for filtering'
-        ]), $this->user->backend);
+        ]));
 
-        $blocksCount = Block::count($this->user->backend, [
+        $blocksCount = $this->manager->blocks()->count($this->user->backend, [
             'title' => 'title for filtering'
         ]);
 
@@ -106,11 +108,11 @@ class OnboardingBlocksTest extends TestCase
      */
     public function test_blocks_can_be_updated_via_static_method()
     {
-        $block = Block::create($this->blockData(), $this->user->backend);
+        $block = $this->manager->blocks()->create($this->blockData());
 
-        Block::update($block->id, ['title' => 'new title'], $this->user->backend);
+        $this->manager->blocks()->update($block->id, ['title' => 'new title']);
 
-        $block = Block::find($block->id, $this->user->backend);
+        $block = $this->manager->blocks()->find($block->id);
         $this->assertEquals($block->title, 'new title');
 
         $block->delete();
@@ -122,12 +124,12 @@ class OnboardingBlocksTest extends TestCase
      */
     public function test_blocks_can_be_saved()
     {
-        $block = Block::create($this->blockData(), $this->user->backend);
+        $block = $this->manager->blocks()->create($this->blockData());
 
         $block->title = 'new title';
         $block->save();
 
-        $block = Block::find($block->id, $this->user->backend);
+        $block = $this->manager->blocks()->find($block->id);
         $this->assertEquals($block->title, 'new title');
 
         $block->delete();
@@ -143,10 +145,10 @@ class OnboardingBlocksTest extends TestCase
             $data = $this->blockData();
             $data['title'] = $i;
 
-            Block::create($data, $this->user->backend);
+            $this->manager->blocks()->create($data);
         }
 
-        $blocks = Block::list($this->user->backend, [
+        $blocks = $this->manager->blocks()->list([
             'where' => [
                 'title' => [
                     '$in' => ['0', '1', '2']

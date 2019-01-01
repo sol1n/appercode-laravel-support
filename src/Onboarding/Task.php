@@ -4,8 +4,12 @@ namespace Appercode\Onboarding;
 
 use Appercode\Onboarding\Entity;
 
+use Appercode\Enums\Onboarding\Task\ConfirmationTypes;
+
 use Appercode\Contracts\Backend;
 use Appercode\Contracts\Onboarding\Task as TaskContract;
+
+use Illuminate\Support\Collection;
 
 class Task extends Entity implements TaskContract
 {
@@ -75,10 +79,14 @@ class Task extends Entity implements TaskContract
      */
     public $title;
 
-    const CONFIRMATION_TYPE_BY_PERFORMER = 'byPerformer';
-    const CONFIRMATION_TYPE_BY_MENTOR = 'byMentor';
-    const CONFIRMATION_TYPE_BY_ADMINISTRATOR = 'byAdministrator';
-    const CONFIRMATION_TYPE_BY_FORM = 'byForm';
+    /**
+     * Confirmation types variants
+     * @return Illuminate\Support\Collection
+     */
+    public static function confirmationTypes(): Collection
+    {
+        return ConfirmationTypes::list();
+    }
 
     protected static function methods(Backend $backend, string $name, array $data = [])
     {

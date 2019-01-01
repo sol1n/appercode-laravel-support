@@ -6,17 +6,19 @@ use Tests\TestCase;
 
 use Appercode\User;
 use Appercode\Backend;
-use Appercode\Onboarding\Roadmap;
+use Appercode\Services\OnboardingManager;
 
-class OnboardingRoadmapsTest extends TestCase
+class RoadmapsTest extends TestCase
 {
     private $user;
+    private $manager;
 
     protected function setUp()
     {
         parent::setUp();
 
         $this->user = User::login((new Backend), getenv('APPERCODE_USER'), getenv('APPERCODE_PASSWORD'));
+        $this->manager = new OnboardingManager($this->user->backend);
     }
 
     protected function roadmapData()
@@ -38,7 +40,7 @@ class OnboardingRoadmapsTest extends TestCase
      */
     public function test_roadmap_can_be_created()
     {
-        $roadmap = Roadmap::create($this->roadmapData(), $this->user->backend);
+        $roadmap = $this->manager->roadmaps()->create($this->roadmapData());
 
         foreach ($this->roadmapData() as $index => $value) {
             $this->assertEquals($roadmap->{$index}, $value);
@@ -57,11 +59,11 @@ class OnboardingRoadmapsTest extends TestCase
      */
     public function test_roadmap_can_be_deleted()
     {
-        $roadmap = Roadmap::create($this->roadmapData(), $this->user->backend);
+        $roadmap = $this->manager->roadmaps()->create($this->roadmapData());
 
         $roadmap->delete();
 
-        $roadmap = Roadmap::find($roadmap->id, $this->user->backend);
+        $roadmap = $this->manager->roadmaps()->find($roadmap->id);
         $this->assertEquals($roadmap->isDeleted, true);
     }
 
@@ -71,11 +73,11 @@ class OnboardingRoadmapsTest extends TestCase
      */
     public function test_roadmap_can_be_deleted_via_static_method()
     {
-        $roadmap = Roadmap::create($this->roadmapData(), $this->user->backend);
+        $roadmap = $this->manager->roadmaps()->create($this->roadmapData());
 
-        Roadmap::remove($roadmap->id, $this->user->backend);
+        $this->manager->roadmaps()->delete($roadmap->id);
 
-        $roadmap = Roadmap::find($roadmap->id, $this->user->backend);
+        $roadmap = $this->manager->roadmaps()->find($roadmap->id);
         $this->assertEquals($roadmap->isDeleted, true);
     }
 
@@ -85,11 +87,11 @@ class OnboardingRoadmapsTest extends TestCase
      */
     public function disabled_test_roadmaps_can_be_counted()
     {
-        $roadmap = Roadmap::create(array_merge($this->roadmapData(), [
+        $roadmap = $this->manager->roadmaps()->create(array_merge($this->roadmapData(), [
             'title' => 'title for filtering'
-        ]), $this->user->backend);
+        ]));
 
-        $roadmapsCount = Roadmap::count($this->user->backend, [
+        $roadmapsCount = $this->manager->roadmaps()->count([
             'title' => 'title for filtering'
         ]);
 
@@ -104,11 +106,11 @@ class OnboardingRoadmapsTest extends TestCase
      */
     public function test_blocks_can_be_updated_via_static_method()
     {
-        $roadmap = Roadmap::create($this->roadmapData(), $this->user->backend);
+        $roadmap = $this->manager->roadmaps()->create($this->roadmapData());
 
-        Roadmap::update($roadmap->id, ['title' => 'new title'], $this->user->backend);
+        $this->manager->roadmaps()->update($roadmap->id, ['title' => 'new title']);
 
-        $roadmap = Roadmap::find($roadmap->id, $this->user->backend);
+        $roadmap = $this->manager->roadmaps()->find($roadmap->id);
         $this->assertEquals($roadmap->title, 'new title');
 
         $roadmap->delete();
@@ -120,12 +122,12 @@ class OnboardingRoadmapsTest extends TestCase
      */
     public function test_blocks_can_be_saved()
     {
-        $roadmap = Roadmap::create($this->roadmapData(), $this->user->backend);
+        $roadmap = $this->manager->roadmaps()->create($this->roadmapData());
 
         $roadmap->title = 'new title';
         $roadmap->save();
 
-        $roadmap = Roadmap::find($roadmap->id, $this->user->backend);
+        $roadmap = $this->manager->roadmaps()->find($roadmap->id);
         $this->assertEquals($roadmap->title, 'new title');
 
         $roadmap->delete();
@@ -141,10 +143,10 @@ class OnboardingRoadmapsTest extends TestCase
             $data = $this->roadmapData();
             $data['title'] = $i;
 
-            Roadmap::create($data, $this->user->backend);
+            $this->manager->roadmaps()->create($data);
         }
 
-        $roadmaps = Roadmap::list($this->user->backend, [
+        $roadmaps = $this->manager->roadmaps()->list([
             'where' => [
                 'title' => [
                     '$in' => ['0', '1', '2']

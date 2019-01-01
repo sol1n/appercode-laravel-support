@@ -7,16 +7,20 @@ use Tests\TestCase;
 use Appercode\User;
 use Appercode\Backend;
 use Appercode\Onboarding\Task;
+use Appercode\Services\OnboardingManager;
+use Appercode\Enums\Onboarding\Task\ConfirmationTypes;
 
-class OnboardingTasksTest extends TestCase
+class TasksTest extends TestCase
 {
     private $user;
+    private $manager;
 
     protected function setUp()
     {
         parent::setUp();
 
         $this->user = User::login((new Backend), getenv('APPERCODE_USER'), getenv('APPERCODE_PASSWORD'));
+        $this->manager = new OnboardingManager($this->user->backend);
     }
 
     protected function taskData()
@@ -29,7 +33,7 @@ class OnboardingTasksTest extends TestCase
             'beginAt' => 1,
             'endAt' => 9,
             'orderIndex' => 0,
-            'confirmationType' => TASK::CONFIRMATION_TYPE_BY_ADMINISTRATOR,
+            'confirmationType' => ConfirmationTypes::CONFIRMATION_TYPE_BY_ADMINISTRATOR,
             'reward' => [
                 'points' => 12
             ]
@@ -42,7 +46,7 @@ class OnboardingTasksTest extends TestCase
      */
     public function test_task_can_be_created()
     {
-        $task = Task::create($this->taskData(), $this->user->backend);
+        $task = $this->manager->tasks()->create($this->taskData());
 
         foreach ($this->taskData() as $index => $value) {
             $this->assertEquals($task->{$index}, $value);
@@ -61,11 +65,11 @@ class OnboardingTasksTest extends TestCase
      */
     public function test_task_can_be_deleted()
     {
-        $task = Task::create($this->taskData(), $this->user->backend);
+        $task = $this->manager->tasks()->create($this->taskData());
 
         $task->delete();
 
-        $task = Task::find($task->id, $this->user->backend);
+        $task = $this->manager->tasks()->find($task->id);
 
         $this->assertEquals($task->isDeleted, true);
     }
@@ -78,9 +82,9 @@ class OnboardingTasksTest extends TestCase
     {
         $data = $this->taskData();
         $data['orderIndex'] = 25;
-        $task = Task::create($data, $this->user->backend);
+        $task = $this->manager->tasks()->create($data);
 
-        $tasksCount = Task::count($this->user->backend, [
+        $tasksCount = $this->manager->tasks()->count([
             'orderIndex' => 25
         ]);
 
@@ -99,10 +103,10 @@ class OnboardingTasksTest extends TestCase
             $data = $this->taskData();
             $data['title'] = $i;
 
-            $tasks[] = Task::create($data, $this->user->backend);
+            $this->manager->tasks()->create($data);
         }
 
-        $tasks = Task::list($this->user->backend, [
+        $tasks = $this->manager->tasks()->list([
             'where' => [
                 'title' => [
                     '$in' => ['0', '1', '2']
@@ -122,10 +126,10 @@ class OnboardingTasksTest extends TestCase
      */
     public function test_task_can_be_saved()
     {
-        $task = Task::create($this->taskData(), $this->user->backend);
+        $task = $this->manager->tasks()->create($this->taskData());
         $task->title = 'new title';
         $task->save();
-        $task = Task::find($task->id, $this->user->backend);
+        $task = $this->manager->tasks()->find($task->id);
 
         $this->assertEquals($task->title, 'new title');
         $task->delete();
@@ -137,11 +141,11 @@ class OnboardingTasksTest extends TestCase
      */
     public function test_task_can_be_updated_via_static_method()
     {
-        $task = Task::create($this->taskData(), $this->user->backend);
-        Task::update($task->id, [
+        $task = $this->manager->tasks()->create($this->taskData());
+        $this->manager->tasks()->update($task->id, [
             'title' => 'new title'
-        ], $this->user->backend);
-        $task = Task::find($task->id, $this->user->backend);
+        ]);
+        $task = $this->manager->tasks()->find($task->id);
 
         $this->assertEquals($task->title, 'new title');
         $task->delete();
@@ -153,12 +157,22 @@ class OnboardingTasksTest extends TestCase
      */
     public function test_task_can_be_deleted_via_static_method()
     {
-        $task = Task::create($this->taskData(), $this->user->backend);
+        $task = $this->manager->tasks()->create($this->taskData());
 
-        Task::remove($task->id, $this->user->backend);
+        $this->manager->tasks()->delete($task->id);
 
-        $task = Task::find($task->id, $this->user->backend);
+        $task = $this->manager->tasks()->find($task->id);
 
         $this->assertEquals($task->isDeleted, true);
+    }
+
+    /**
+     * @group onboarding
+     * @group tasks
+     */
+    public function test_task_class_returns_confirmation_types()
+    {
+        $types = Task::confirmationTypes();
+        $this->assertEquals($types->count(), 4);
     }
 }
