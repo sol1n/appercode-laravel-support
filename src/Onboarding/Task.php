@@ -32,30 +32,6 @@ class Task extends Entity implements TaskContract
     public $confirmationFormId;
 
     /**
-     * Order index in a block
-     * @var int
-     */
-    public $orderIndex;
-
-    /**
-     * Availabitiy day number
-     * @var int
-     */
-    public $beginAt;
-
-    /**
-     * deadline day number
-     * @var int
-     */
-    public $endAt;
-
-    /**
-     * Required in a block property
-     * @var bool
-     */
-    public $isRequired;
-
-    /**
      * Full html description
      * @var string
      */
@@ -134,11 +110,7 @@ class Task extends Entity implements TaskContract
         $this->reward = $data['reward'] ?? [];
         $this->confirmationType = $data['confirmationType'];
         $this->confirmationFormId = $data['confirmationFormId'] ?? null;
-        $this->orderIndex = $data['orderIndex'] ?? null;
-        $this->beginAt = (int) $data['beginAt'] ?? null;
-        $this->endAt = (int) $data['endAt'] ?? null;
 
-        $this->isRequired = (bool) $data['isRequired'];
         $this->description = $data['description'] ?? null;
         $this->imageFileId = $data['imageFileId'] ?? null;
         $this->subtitle = $data['subtitle'] ?? null;
@@ -158,10 +130,6 @@ class Task extends Entity implements TaskContract
             'subtitle' => $this->subtitle,
             'imageFileId' => $this->imageFileId,
             'description' => $this->description,
-            'isRequired' => $this->isRequired,
-            'beginAt' => $this->beginAt,
-            'endAt' => $this->endAt,
-            'orderIndex' => $this->orderIndex,
             'confirmationFormId' => $this->confirmationFormId,
             'confirmationType' => $this->confirmationType,
             'reward' => (object) $this->reward

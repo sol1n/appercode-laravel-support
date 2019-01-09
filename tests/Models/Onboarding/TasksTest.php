@@ -29,10 +29,6 @@ class TasksTest extends TestCase
             'title' => 'task title',
             'subtitle' => 'task subtitle',
             'description' => 'task description',
-            'isRequired' => true,
-            'beginAt' => 1,
-            'endAt' => 9,
-            'orderIndex' => 0,
             'confirmationType' => ConfirmationTypes::CONFIRMATION_TYPE_BY_ADMINISTRATOR,
             'reward' => [
                 'points' => 12
@@ -81,11 +77,11 @@ class TasksTest extends TestCase
     public function test_task_can_be_counted()
     {
         $data = $this->taskData();
-        $data['orderIndex'] = 25;
+        $data['title'] = '25';
         $task = $this->manager->tasks()->create($data);
 
         $tasksCount = $this->manager->tasks()->count([
-            'orderIndex' => 25
+            'title' => '25'
         ]);
 
         $this->assertEquals($tasksCount, 1);
