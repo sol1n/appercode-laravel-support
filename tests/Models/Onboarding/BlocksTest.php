@@ -29,11 +29,13 @@ class BlocksTest extends TestCase
     /**
      * @group onboarding
      * @group onboarding.blocks
+     * @group onboarding.blocks.current
      */
     public function test_block_can_be_created()
     {
         $task = $this->manager->tasks()->create($this->taskData());
         $blockData = $this->blockData($task->id);
+
         $block = $this->manager->blocks()->create($blockData);
 
         $this->assertEquals(empty($block->id), false);
@@ -47,7 +49,7 @@ class BlocksTest extends TestCase
         $blockTask = $block->tasks->first();
         $blockTaskData = $blockData['tasks'][0];
 
-        $this->assertEquals($blockTask['taskId'], $task->id);
+        $this->assertEquals($blockTask['id'], $task->id);
         $this->assertEquals($blockTask['isRequired'], $blockTaskData['isRequired']);
         $this->assertEquals($blockTask['beginAt'], $blockTaskData['beginAt']);
         $this->assertEquals($blockTask['endAt'], $blockTaskData['endAt']);

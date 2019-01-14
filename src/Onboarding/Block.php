@@ -25,7 +25,7 @@ class Block extends Entity implements BlockContract
 
     /**
      * Child tasks [
-     *     'taskId' => string,
+     *     'id' => string,
      *     'isRequired' => bool,
      *     'beginAt' => ?int
      *     'endAt' => ?int,
@@ -124,7 +124,7 @@ class Block extends Entity implements BlockContract
         if (is_null($this->fetchedTasks)) {
             $taskIds = [];
             foreach ($this->tasks as $task) {
-                $tasksIds[] = $task['taskId'];
+                $tasksIds[] = $task['id'];
             }
 
             if (!count($tasksIds)) {

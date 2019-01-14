@@ -137,7 +137,7 @@ class Roadmap extends Entity implements RoadmapContract
             $tasksIds = [];
             foreach ($blocks as $block) {
                 foreach ($block->tasks as $task) {
-                    $tasksIds[] = $task['TaskId'];
+                    $tasksIds[] = $task['id'];
                 }
             }
 
