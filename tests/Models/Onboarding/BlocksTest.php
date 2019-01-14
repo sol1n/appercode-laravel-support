@@ -29,7 +29,6 @@ class BlocksTest extends TestCase
     /**
      * @group onboarding
      * @group onboarding.blocks
-     * @group onboarding.blocks.current
      */
     public function test_block_can_be_created()
     {
@@ -122,10 +121,25 @@ class BlocksTest extends TestCase
         $task = $this->manager->tasks()->create($this->taskData());
         $block = $this->manager->blocks()->create($this->blockData($task->id));
 
-        $this->manager->blocks()->update($block->id, ['title' => 'new title']);
+        $newBlockTasksData = [
+            [
+                'id' => $task->id,
+                'isRequired' => false,
+                'beginAt' => null,
+                'endAt' => 10,
+                'orderIndex' => 100
+            ]
+        ];
+
+        $this->manager->blocks()->update($block->id, [
+            'title' => 'new title',
+            'tasks' => $newBlockTasksData
+        ]);
 
         $block = $this->manager->blocks()->find($block->id);
+
         $this->assertEquals($block->title, 'new title');
+        $this->assertEquals($block->tasks->toArray(), $newBlockTasksData);
 
         $block->delete();
         $task->delete();
@@ -134,17 +148,30 @@ class BlocksTest extends TestCase
     /**
      * @group onboarding
      * @group onboarding.blocks
+     * @group onboarding.blocks.current
      */
     public function test_blocks_can_be_saved()
     {
         $task = $this->manager->tasks()->create($this->taskData());
         $block = $this->manager->blocks()->create($this->blockData($task->id));
 
+        $newBlockTasksData = [
+            [
+                'id' => $task->id,
+                'isRequired' => false,
+                'beginAt' => null,
+                'endAt' => 10,
+                'orderIndex' => 100
+            ]
+        ];
+
         $block->title = 'new title';
+        $block->tasks = collect($newBlockTasksData);
         $block->save();
 
         $block = $this->manager->blocks()->find($block->id);
         $this->assertEquals($block->title, 'new title');
+        $this->assertEquals($block->tasks->toArray(), $newBlockTasksData);
 
         $block->delete();
         $task->delete();
