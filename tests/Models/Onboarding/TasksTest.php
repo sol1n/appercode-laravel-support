@@ -1,6 +1,6 @@
 <?php
 
-namespace Tests\Unit\Onboarding;
+namespace Tests\Models\Onboarding;
 
 use Tests\TestCase;
 
@@ -8,10 +8,13 @@ use Appercode\User;
 use Appercode\Backend;
 use Appercode\Onboarding\Task;
 use Appercode\Services\OnboardingManager;
-use Appercode\Enums\Onboarding\Task\ConfirmationTypes;
+
+use Tests\Models\Onboarding\ExampleData;
 
 class TasksTest extends TestCase
 {
+    use ExampleData;
+    
     private $user;
     private $manager;
 
@@ -21,19 +24,6 @@ class TasksTest extends TestCase
 
         $this->user = User::login((new Backend), getenv('APPERCODE_USER'), getenv('APPERCODE_PASSWORD'));
         $this->manager = new OnboardingManager($this->user->backend);
-    }
-
-    protected function taskData()
-    {
-        return [
-            'title' => 'task title',
-            'subtitle' => 'task subtitle',
-            'description' => 'task description',
-            'confirmationType' => ConfirmationTypes::CONFIRMATION_TYPE_BY_ADMINISTRATOR,
-            'reward' => [
-                'points' => 12
-            ]
-        ];
     }
 
     /**
