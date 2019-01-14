@@ -215,4 +215,24 @@ class BlocksTest extends TestCase
 
         $task->delete();
     }
+
+    /**
+     * @group onboarding
+     * @group onboarding.blocks
+     * @group onboarding.blocks.current
+     */
+    public function test_block_tasks_method()
+    {
+        $task = $this->manager->tasks()->create($this->taskData());
+        $block = $this->manager->blocks()->create($this->blockData($task->id));
+
+        $tasks = $block->tasks();
+        $this->assertEquals($tasks->count(), 1);
+
+        $fetchedTask = $tasks->first();
+        $this->assertEquals($fetchedTask->id, $task->id);
+
+        $block->delete();
+        $task->delete();
+    }
 }

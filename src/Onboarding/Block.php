@@ -2,9 +2,11 @@
 
 namespace Appercode\Onboarding;
 
+use Appercode\Onboarding\Task;
 use Appercode\Onboarding\Entity;
 use Appercode\Contracts\Backend;
 use Appercode\Contracts\Onboarding\Block as BlockContract;
+
 use Illuminate\Support\Collection;
 
 class Block extends Entity implements BlockContract
@@ -31,7 +33,7 @@ class Block extends Entity implements BlockContract
      * ]
      * @var Illuminate\Support\Collection
      */
-    public $task;
+    public $tasks;
 
     /**
      * Order index in a block
@@ -105,5 +107,28 @@ class Block extends Entity implements BlockContract
             'tasks' => $this->tasks->toArray(),
             'orderIndex' => $this->orderIndex
         ];
+    }
+
+    public function tasks(): Collection
+    {
+        $taskIds = [];
+        foreach ($this->tasks as $task) {
+            $tasksIds[] = $task['taskId'];
+        }
+
+        if (!count($tasksIds)) {
+            return new Collection([]);
+        }
+        
+        return Task::list($this->backend, [
+            'take' => -1,
+            'where' => [
+                'id' => [
+                    '$in' => array_values(array_unique($tasksIds))
+                ]
+            ]
+        ])->mapWithKeys(function (Task $task) {
+            return [$task->id => $task];
+        });
     }
 }

@@ -21,7 +21,7 @@ abstract class Entity implements OnboardingEntity
 {
     use AppercodeRequest;
 
-    private $backend;
+    protected $backend;
 
     public $id;
     public $createdAt;
