@@ -6,8 +6,11 @@ use Tests\TestCase;
 
 use Appercode\User;
 use Appercode\Backend;
+use Appercode\Onboarding\Task;
+use Appercode\Onboarding\Block;
 use Appercode\Onboarding\Roadmap;
 use Appercode\Services\OnboardingManager;
+use Appercode\Enums\Onboarding\Task\ConfirmationTypes;
 
 class RoadmapsTest extends TestCase
 {
@@ -31,6 +34,45 @@ class RoadmapsTest extends TestCase
             ],
             'groupIds' => [
                 '00000000-0000-0000-0000-000000000000'
+            ]
+        ];
+    }
+
+    protected function blockData(string $taskId)
+    {
+        return [
+            'title' => 'block title',
+            'icons' => [
+                'unavailable' => 'https://via.placeholder.com/150x150.svg',
+                'available' => 'https://via.placeholder.com/150x150.svg'
+            ],
+            'tasks' => $this->blockTasksData($taskId),
+            'orderIndex' => 10
+        ];
+    }
+
+    protected function taskData()
+    {
+        return [
+            'title' => 'task title',
+            'subtitle' => 'task subtitle',
+            'description' => 'task description',
+            'confirmationType' => ConfirmationTypes::CONFIRMATION_TYPE_BY_ADMINISTRATOR,
+            'reward' => [
+                'points' => 12
+            ]
+        ];
+    }
+
+    protected function blockTasksData(string $taskId)
+    {
+        return [
+            [
+                'taskId' => $taskId,
+                'isRequired' => true,
+                'beginAt' => 0,
+                'endAt' => null,
+                'orderIndex' => 10
             ]
         ];
     }
@@ -159,5 +201,60 @@ class RoadmapsTest extends TestCase
         $roadmaps->each(function (Roadmap $roadmap) {
             $roadmap->delete();
         });
+    }
+
+    /**
+     * @group onboarding
+     * @group onboarding.roadmaps
+     */
+    public function test_roadmap_blocks_method()
+    {
+        $task = $this->manager->tasks()->create($this->taskData());
+        $block = $this->manager->blocks()->create($this->blockData($task->id));
+
+        $roadmapData = array_merge($this->roadmapData(), [
+            'blockIds' => [$block->id]
+        ]);
+
+        $roadmap = $this->manager->roadmaps()->create($roadmapData);
+
+        $blocks = $roadmap->blocks(['take' => -1]);
+
+        $this->assertEquals($blocks->count(), 1);
+
+        $fetchedBlock = $blocks->first();
+        $this->assertEquals($fetchedBlock->id, $block->id);
+
+        $roadmap->delete();
+        $block->delete();
+        $task->delete();
+    }
+
+
+    /**
+     * @group onboarding
+     * @group onboarding.roadmaps
+     */
+    public function test_roadmap_tasks_method()
+    {
+        $task = $this->manager->tasks()->create($this->taskData());
+        $block = $this->manager->blocks()->create($this->blockData($task->id));
+
+        $roadmapData = array_merge($this->roadmapData(), [
+            'blockIds' => [$block->id]
+        ]);
+
+        $roadmap = $this->manager->roadmaps()->create($roadmapData);
+
+        $tasks = $roadmap->tasks(['take' => -1]);
+
+        $this->assertEquals($tasks->count(), 1);
+
+        $fetchedTask = $tasks->first();
+        $this->assertEquals($fetchedTask->id, $task->id);
+
+        $roadmap->delete();
+        $block->delete();
+        $task->delete();
     }
 }

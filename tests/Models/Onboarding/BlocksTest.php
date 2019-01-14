@@ -219,14 +219,13 @@ class BlocksTest extends TestCase
     /**
      * @group onboarding
      * @group onboarding.blocks
-     * @group onboarding.blocks.current
      */
     public function test_block_tasks_method()
     {
         $task = $this->manager->tasks()->create($this->taskData());
         $block = $this->manager->blocks()->create($this->blockData($task->id));
 
-        $tasks = $block->tasks();
+        $tasks = $block->tasks(['take' => -1]);
         $this->assertEquals($tasks->count(), 1);
 
         $fetchedTask = $tasks->first();

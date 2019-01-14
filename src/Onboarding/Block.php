@@ -41,6 +41,12 @@ class Block extends Entity implements BlockContract
      */
     public $orderIndex;
 
+    /**
+     * Current block tasks (Appercode\Onboarding\Task) list
+     * @var Illuminate\Support\Collection
+     */
+    private $fetchedTasks;
+
     protected static function methods(Backend $backend, string $name, array $data = [])
     {
         switch ($name) {
@@ -109,26 +115,29 @@ class Block extends Entity implements BlockContract
         ];
     }
 
-    public function tasks(): Collection
+    /**
+     * Current block tasks (Appercode\Onboarding\Task) list
+     * @return Illuminate\Support\Collection
+     */
+    public function tasks($filter = []): Collection
     {
-        $taskIds = [];
-        foreach ($this->tasks as $task) {
-            $tasksIds[] = $task['taskId'];
-        }
+        if (is_null($this->fetchedTasks)) {
+            $taskIds = [];
+            foreach ($this->tasks as $task) {
+                $tasksIds[] = $task['taskId'];
+            }
 
-        if (!count($tasksIds)) {
-            return new Collection([]);
+            if (!count($tasksIds)) {
+                return new Collection([]);
+            }
+
+            $filter['where']['id']['$in'] = array_values(array_unique($tasksIds));
+            
+            $this->fetchedTasks = Task::list($this->backend, $filter)->mapWithKeys(function (Task $task) {
+                return [$task->id => $task];
+            });
         }
         
-        return Task::list($this->backend, [
-            'take' => -1,
-            'where' => [
-                'id' => [
-                    '$in' => array_values(array_unique($tasksIds))
-                ]
-            ]
-        ])->mapWithKeys(function (Task $task) {
-            return [$task->id => $task];
-        });
+        return $this->fetchedTasks;
     }
 }
