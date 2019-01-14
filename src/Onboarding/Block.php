@@ -5,6 +5,7 @@ namespace Appercode\Onboarding;
 use Appercode\Onboarding\Entity;
 use Appercode\Contracts\Backend;
 use Appercode\Contracts\Onboarding\Block as BlockContract;
+use Illuminate\Support\Collection;
 
 class Block extends Entity implements BlockContract
 {
@@ -21,10 +22,16 @@ class Block extends Entity implements BlockContract
     public $icons;
 
     /**
-     * Child tasks (Appercode\Onboarding\Task) ids
-     * @var array
+     * Child tasks [
+     *     'taskId' => string,
+     *     'isRequired' => bool,
+     *     'beginAt' => ?int
+     *     'endAt' => ?int,
+     *     'orderIndex' => int
+     * ]
+     * @var Illuminate\Support\Collection
      */
-    public $taskIds;
+    public $task;
 
     /**
      * Order index in a block
@@ -77,8 +84,11 @@ class Block extends Entity implements BlockContract
 
         $this->title = $data['title'] ?? null;
         $this->icons = $data['icons'] ?? [];
-        $this->taskIds = $data['taskIds'] ?? [];
         $this->orderIndex = $data['orderIndex'] ?? null;
+
+        $this->tasks = isset($data['tasks']) && is_array($data['tasks'])
+            ? (new Collection($data['tasks']))->sortBy('orderIndex')
+            : [];
 
         return $this;
     }
@@ -92,7 +102,7 @@ class Block extends Entity implements BlockContract
         return [
             'title' => $this->title,
             'icons' => (object) $this->icons,
-            'taskIds' => $this->taskIds,
+            'tasks' => $this->tasks->toArray(),
             'orderIndex' => $this->orderIndex
         ];
     }

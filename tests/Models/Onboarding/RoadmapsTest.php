@@ -1,11 +1,12 @@
 <?php
 
-namespace Tests\Unit;
+namespace Tests\Unit\Onboarding;
 
 use Tests\TestCase;
 
 use Appercode\User;
 use Appercode\Backend;
+use Appercode\Onboarding\Roadmap;
 use Appercode\Services\OnboardingManager;
 
 class RoadmapsTest extends TestCase
@@ -36,7 +37,7 @@ class RoadmapsTest extends TestCase
 
     /**
      * @group onboarding
-     * @group roadmaps
+     * @group onboarding.roadmaps
      */
     public function test_roadmap_can_be_created()
     {
@@ -55,7 +56,7 @@ class RoadmapsTest extends TestCase
 
     /**
      * @group onboarding
-     * @group roadmaps
+     * @group onboarding.roadmaps
      */
     public function test_roadmap_can_be_deleted()
     {
@@ -69,7 +70,7 @@ class RoadmapsTest extends TestCase
 
     /**
      * @group onboarding
-     * @group roadmaps
+     * @group onboarding.roadmaps
      */
     public function test_roadmap_can_be_deleted_via_static_method()
     {
@@ -83,9 +84,9 @@ class RoadmapsTest extends TestCase
 
     /**
      * @group onboarding
-     * @group roadmaps
+     * @group onboarding.roadmaps
      */
-    public function disabled_test_roadmaps_can_be_counted()
+    public function test_roadmaps_can_be_counted()
     {
         $roadmap = $this->manager->roadmaps()->create(array_merge($this->roadmapData(), [
             'title' => 'title for filtering'
@@ -102,9 +103,9 @@ class RoadmapsTest extends TestCase
 
     /**
      * @group onboarding
-     * @group roadmaps
+     * @group onboarding.roadmaps
      */
-    public function test_blocks_can_be_updated_via_static_method()
+    public function test_roadmaps_can_be_updated_via_static_method()
     {
         $roadmap = $this->manager->roadmaps()->create($this->roadmapData());
 
@@ -118,9 +119,9 @@ class RoadmapsTest extends TestCase
 
     /**
      * @group onboarding
-     * @group roadmaps
+     * @group onboarding.roadmaps
      */
-    public function test_blocks_can_be_saved()
+    public function test_roadmaps_can_be_saved()
     {
         $roadmap = $this->manager->roadmaps()->create($this->roadmapData());
 
@@ -135,9 +136,9 @@ class RoadmapsTest extends TestCase
 
     /**
      * @group onboarding
-     * @group roadmaps
+     * @group onboarding.roadmaps
      */
-    public function disabled_test_blocks_can_be_listed()
+    public function test_roadmaps_can_be_listed()
     {
         for ($i = 0; $i < 3; $i++) {
             $data = $this->roadmapData();
